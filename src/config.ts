@@ -19,6 +19,9 @@ const STRIPPED_PARAMS = new Set([
 
 const positiveInt = z.int().positive();
 
+export const REASONING_EFFORTS = ["none", "minimal", "low", "medium", "high", "xhigh"] as const;
+export type ReasoningEffort = (typeof REASONING_EFFORTS)[number];
+
 const SearchInput = z.object({
   url: z.string(),
   label: z.string().min(1).optional(),
@@ -68,7 +71,15 @@ export const ConfigSchema = z
     recencySec: positiveInt.default(3600),
     firstCycleRecencySec: positiveInt.default(600),
     maxPages: positiveInt.default(5),
-    classifier: z.object({ model: z.string().min(1) }),
+    classifier: z.object({
+      model: z.string().min(1),
+      /** Who the students are, in prose. Goes into the prompt verbatim. */
+      program: z.string().min(1),
+      /** Expected graduation, e.g. "May 2028". Goes into the prompt verbatim. */
+      graduation: z.string().min(1),
+      /** OpenRouter's unified `reasoning.effort`. Reasoning tokens count against MAX_TOKENS. */
+      reasoningEffort: z.enum(REASONING_EFFORTS).default("low"),
+    }),
     dedupe: z.object({ windowDays: positiveInt.default(14) }).default({ windowDays: 14 }),
     notifier: z.enum(["telegram"]).default("telegram"),
   })

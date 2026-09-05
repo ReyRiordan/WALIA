@@ -1,9 +1,9 @@
 /**
  * Manual scrape of one configured search against real LinkedIn. Optionally tees raw responses
- * into test/fixtures/. Usage:
- *   pnpm scrape [--search <label>] [--pages <n>] [--save-fixtures]
+ * into test/fixtures/, or writes every job with a description as an unlabelled eval file. Usage:
+ *   pnpm scrape [--search <label>] [--pages <n>] [--recency <sec>] [--save-fixtures] [--save-eval]
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { loadConfig, parseEnv } from "../src/config.ts";
 import { log } from "../src/log.ts";
@@ -24,6 +24,7 @@ const { values: args } = parseArgs({
     pages: { type: "string", default: "1" },
     recency: { type: "string" },
     "save-fixtures": { type: "boolean", default: false },
+    "save-eval": { type: "boolean", default: false },
   },
 });
 
@@ -48,7 +49,9 @@ if (!Number.isInteger(recencySec) || recencySec < 1) {
 }
 
 const FIXTURE_DIR = new URL("../test/fixtures/", import.meta.url);
+const EVAL_DIR = new URL("../test/eval/eligibility/", import.meta.url);
 const saveFixtures = args["save-fixtures"];
+const saveEval = args["save-eval"];
 let firstCardId: string | null = null;
 
 /** Map a request URL to a fixture name, or null for requests that are not captured. */
@@ -120,6 +123,30 @@ log.info(
   },
   "scrape finished",
 );
+
+if (saveEval) {
+  // One unlabelled file per job with a description. Existing files are never overwritten, so
+  // hand labels survive a re-run. See docs/classifier/eval.md.
+  mkdirSync(EVAL_DIR, { recursive: true });
+  let written = 0;
+  for (const job of result.jobs) {
+    if (!job.description) continue;
+    const file = new URL(`${job.id}.json`, EVAL_DIR);
+    if (existsSync(file)) continue;
+    const entry = {
+      id: job.id,
+      title: job.title,
+      company: job.company,
+      url: job.url,
+      description: job.description,
+      expected: { degreeOk: null, workAuth: null },
+      note: "",
+    };
+    writeFileSync(file, `${JSON.stringify(entry, null, 2)}\n`);
+    written += 1;
+  }
+  log.info({ written, dir: EVAL_DIR.pathname }, "eval files written");
+}
 
 if (saveFixtures) {
   // The fragment is captured even when JSON-LD succeeded, and the empty page needs a request

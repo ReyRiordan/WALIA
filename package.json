@@ -17,7 +17,8 @@
     "lint": "biome check .",
     "format": "biome format --write .",
     "scrape": "f() { node --env-file-if-exists=.env scripts/scrape.ts \"$@\" | pino-pretty; }; f",
-    "notify:test": "node --env-file-if-exists=.env scripts/notify.ts | pino-pretty"
+    "notify:test": "node --env-file-if-exists=.env scripts/notify.ts | pino-pretty",
+    "eval:classifier": "node --env-file-if-exists=.env scripts/eval.ts | pino-pretty"
   },
   "dependencies": {
     "@grammyjs/auto-retry": "^2.0.2",

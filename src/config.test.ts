@@ -6,18 +6,19 @@ import { ConfigError, parseConfig, parseEnv } from "./config.ts";
 import { log } from "./log.ts";
 
 const BASE = "https://www.linkedin.com/jobs/search/";
+const CLASSIFIER = { model: "test/model", program: "test program", graduation: "May 2028" };
 
 function config(url: string, extra: Record<string, unknown> = {}) {
   return parseConfig({
     searches: [{ url }],
-    classifier: { model: "test/model" },
+    classifier: CLASSIFIER,
     ...extra,
   });
 }
 
 /** Parse a single-search config and return that search. */
 function search(url: string, label?: string) {
-  const c = parseConfig({ searches: [{ url, label }], classifier: { model: "test/model" } });
+  const c = parseConfig({ searches: [{ url, label }], classifier: CLASSIFIER });
   const s = c.searches[0];
   if (!s) throw new Error("no search parsed");
   return s;
@@ -95,8 +96,29 @@ describe("config defaults and bounds", () => {
     });
   });
 
-  it("requires classifier.model", () => {
+  it("requires classifier.model, program, and graduation", () => {
     expect(() => parseConfig({ searches: [{ url: `${BASE}?keywords=x` }] })).toThrow(/classifier/);
+    const { program, ...noProgram } = CLASSIFIER;
+    expect(() => config(`${BASE}?keywords=x`, { classifier: noProgram })).toThrow(
+      /classifier\.program/,
+    );
+    const { graduation, ...noGraduation } = CLASSIFIER;
+    expect(() => config(`${BASE}?keywords=x`, { classifier: noGraduation })).toThrow(
+      /classifier\.graduation/,
+    );
+    expect(program).toBeDefined();
+    expect(graduation).toBeDefined();
+  });
+
+  it("defaults classifier.reasoningEffort to low and rejects unknown values", () => {
+    expect(config(`${BASE}?keywords=x`).classifier.reasoningEffort).toBe("low");
+    expect(
+      config(`${BASE}?keywords=x`, { classifier: { ...CLASSIFIER, reasoningEffort: "none" } })
+        .classifier.reasoningEffort,
+    ).toBe("none");
+    expect(() =>
+      config(`${BASE}?keywords=x`, { classifier: { ...CLASSIFIER, reasoningEffort: "max" } }),
+    ).toThrow(/classifier\.reasoningEffort/);
   });
 
   it("enforces the pollIntervalSec floor", () => {
