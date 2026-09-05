@@ -12,7 +12,7 @@ Source lives in src/, one directory per component (`src/core`, `src/scraper`, `s
 - docs/core/ - polling loop, store, dedupe, config
 - docs/operations/ - running, deploying to Railway, alerting
 
-Stack: single TypeScript process on Node 24 run directly with Node's type stripping (no tsx, no enums, no namespaces, no parameter properties; relative imports use `.ts` specifiers), SQLite via the built-in `node:sqlite`, grammY for Telegram, OpenRouter for the classifier, zod for validation, pino for logging, hosted on Railway with one volume. `linkedin-guest-scraper-handoff.md` is the reference for LinkedIn endpoints, parsing targets, and throttling until docs/scraper/ replaces it.
+Stack: single TypeScript process on Node 24 run directly with Node's type stripping (no tsx, no enums, no namespaces, no parameter properties; relative imports use `.ts` specifiers), SQLite via the built-in `node:sqlite`, grammY for Telegram, OpenRouter for the classifier, zod for validation, pino for logging, hosted on Railway with one volume.
 
 ## Exploration Workflow
 
@@ -25,6 +25,7 @@ Keep the docs current. Do not end a session with changes and stale docs. Docs de
 pnpm 10 (`npm i -g pnpm`, then `pnpm install`).
 
 - `pnpm dev` runs `src/index.ts` under `node --watch` with `.env` loaded if present, piped through pino-pretty. Set `CONFIG_PATH` to point at a config with a private test group.
+- `pnpm scrape [--search <label>] [--pages <n>] [--recency <sec>] [--save-fixtures]` runs one real search against LinkedIn and prints every request and job. With `--save-fixtures` it refreshes test/fixtures/. See docs/scraper/fixtures.md.
 - `pnpm test` runs vitest once. `pnpm lint` runs Biome check. `pnpm format` writes Biome formatting. `pnpm typecheck` runs tsc over src and test.
 - `pnpm build` emits dist/ from tsconfig.build.json (tests excluded). `pnpm start` runs dist/index.js.
 - `docker build -t walia .` then `docker run --env-file .env walia` mirrors the Railway deploy.
@@ -42,5 +43,8 @@ Use the GitHub CLI (`gh`) for all GitHub-related tasks. Work is tracked as GitHu
 - **detail**: the job view page fetched per new id for the full description (JSON-LD).
 - **dedupe key**: `normalise(company) + "|" + normalise(title)`, location excluded, so per-city clones of one role collapse.
 - **digest**: the single message sent per cycle, one line per dedupe key with locations grouped.
+- **stale**: `skip` reason for a job whose detail timestamp is older than `recencySec`. Stored as seen, never sent.
+- **gone**: `skip` reason for a job whose detail fetch returned 404 or 410. Stored as seen, never sent.
+- **deferred**: an unseen id that got no detail fetch because the cycle budget ran out. Counted, not queued; it is found again next cycle.
 - **soft filter**: classifier verdict `degree_ok = no` suppresses a job; `unclear` sends it with a tag; missing description sends it untagged.
 - **notifier**: the delivery interface (start, isReady, sendDigest, sendAdmin). Telegram is the first adapter.
