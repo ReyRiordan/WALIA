@@ -9,7 +9,7 @@ Write the plan we just settled into GitHub issue(s) that /implement can execute 
 Where to write it:
 - If a stub issue for this work exists (label `needs-grill`), rewrite its body with `gh issue edit`, remove `needs-grill`, keep the component label.
 - Create new issues only if the plan needs splitting. Split at a module boundary another ticket depends on, and only if one PR would otherwise be too big to review in one sitting. Never split for its own sake.
-- If the set or order of issues changed, update the epic (#7).
+- If you split, cross-link the issues with depends on / blocks so the order is recoverable from the tickets alone.
 
 Tickets run in order, so "depends on #N" is fine. There are no users yet, so breakage between tickets is fine too.
 
