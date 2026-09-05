@@ -4,4 +4,4 @@ The polling loop, the SQLite store of seen postings and sent notifications, the 
 
 ## Docs
 
-No docs yet. As they are added, list each one here with a one-line purpose.
+- [config.md](config.md) - config.json fields and defaults, env variables, search URL parsing, boot failure behaviour, logging.
