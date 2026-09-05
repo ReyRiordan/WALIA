@@ -10,7 +10,7 @@
   "packageManager": "pnpm@10.34.5",
   "scripts": {
     "dev": "node --watch --env-file-if-exists=.env src/index.ts | pino-pretty",
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "start": "node --no-warnings=ExperimentalWarning dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

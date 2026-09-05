@@ -3,7 +3,7 @@ WORKDIR /app
 RUN npm i -g pnpm@10.34.5
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
-COPY tsconfig.json ./
+COPY tsconfig.json tsconfig.build.json ./
 COPY src ./src
 RUN pnpm build
 
