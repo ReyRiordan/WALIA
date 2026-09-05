@@ -47,7 +47,7 @@ Loaded from the process env. `pnpm dev` passes `--env-file-if-exists=.env`; Rail
 | `CONFIG_PATH` | `./config.json` | |
 | `LOG_LEVEL` | `info` | pino level. |
 | `PORT` | `3000` | Health endpoint. Railway sets it. |
-| `PROXY_URL` | none | Must be a valid URL when set. |
+| `PROXY_URL` | none | Must be a valid URL when set. Applies to LinkedIn requests only, via undici `ProxyAgent`. See docs/scraper/client.md. |
 
 ## Logging
 
