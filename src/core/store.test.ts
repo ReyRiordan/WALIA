@@ -50,6 +50,41 @@ describe("openStore on disk", () => {
     expect(db.prepare("PRAGMA journal_mode").get()).toEqual({ journal_mode: "wal" });
     db.close();
   });
+
+  it("migrates a version-1 file and reads its classified rows as relevant unclear", () => {
+    const path = join(dir, "walia.db");
+    const db = new DatabaseSync(path);
+    db.exec(MIGRATIONS[0] as string);
+    db.exec("PRAGMA user_version = 1");
+    db.prepare(
+      `INSERT INTO jobs (linkedin_id, dedupe_key, title, company, location, description, url,
+         first_seen_at, search_label, degree_ok, work_auth, classifier_reason, classified_at)
+       VALUES ('1', 'acme|swe intern', 'SWE Intern', 'Acme', 'Austin, TX', 'd', 'u', ?, 'test',
+         'yes', 'none', 'Says BS/MS.', ?)`,
+    ).run(NOW, NOW + 5);
+    db.prepare(
+      `INSERT INTO jobs (linkedin_id, dedupe_key, title, company, location, url, first_seen_at,
+         search_label)
+       VALUES ('2', 'acme|swe intern', 'SWE Intern', 'Acme', 'Chicago, IL', 'u', ?, 'test')`,
+    ).run(NOW);
+    db.close();
+
+    const store = openStore(path);
+    expect(store.getJobs(["1"])[0]?.verdict).toEqual({
+      relevant: "unclear",
+      degreeOk: "yes",
+      workAuth: "none",
+      reason: "Says BS/MS.",
+    });
+    expect(store.getJobs(["2"])[0]?.verdict).toBeNull();
+    store.setVerdict("2", { relevant: "no", degreeOk: "yes", workAuth: "none", reason: "FT" }, NOW);
+    expect(store.getJobs(["2"])[0]?.verdict?.relevant).toBe("no");
+    store.close();
+
+    const reopened = new DatabaseSync(path);
+    expect(reopened.prepare("PRAGMA user_version").get()).toEqual({ user_version: 2 });
+    reopened.close();
+  });
 });
 
 describe("Store", () => {
@@ -85,6 +120,7 @@ describe("Store", () => {
   it("stores and returns a verdict", () => {
     store.insertJobs([job("1")], NOW);
     const verdict = {
+      relevant: "yes",
       degreeOk: "unclear",
       workAuth: "no_sponsorship",
       reason: "PhD preferred",

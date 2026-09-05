@@ -10,7 +10,7 @@ import {
 import { MAX_REASON_CHARS } from "./prompt.ts";
 
 const INPUT = { title: "SWE Intern", company: "Acme", description: "Pursuing a BS/MS." };
-const GOOD = { degree_ok: "yes", work_auth: "none", reason: "Says BS/MS." };
+const GOOD = { relevant: "yes", degree_ok: "yes", work_auth: "none", reason: "Says BS/MS." };
 
 function completion(content: unknown, extra: Record<string, unknown> = {}) {
   return JSON.stringify({
@@ -46,6 +46,8 @@ function harness(replies: (FetchResponse | Error)[]) {
     model: "test/model",
     program: "test program",
     graduation: "May 2028",
+    term: "summer 2027",
+    fields: "software engineering",
     reasoningEffort: "low",
     fetch,
     sleep,
@@ -57,7 +59,12 @@ function harness(replies: (FetchResponse | Error)[]) {
 }
 
 const UNCLEAR = (cause: string) => ({
-  verdict: { degreeOk: "unclear", workAuth: "unclear", reason: `classifier error: ${cause}` },
+  verdict: {
+    relevant: "unclear",
+    degreeOk: "unclear",
+    workAuth: "unclear",
+    reason: `classifier error: ${cause}`,
+  },
   error: cause,
 });
 
@@ -65,7 +72,7 @@ describe("OpenRouterClassifier happy path", () => {
   it("returns the model's verdict with error null", async () => {
     const h = harness([response(200)]);
     await expect(h.classifier.classify(INPUT)).resolves.toEqual({
-      verdict: { degreeOk: "yes", workAuth: "none", reason: "Says BS/MS." },
+      verdict: { relevant: "yes", degreeOk: "yes", workAuth: "none", reason: "Says BS/MS." },
       error: null,
     });
     expect(h.sleeps).toEqual([]);
@@ -105,6 +112,8 @@ describe("OpenRouterClassifier happy path", () => {
       model: "m",
       program: "p",
       graduation: "g",
+      term: "t",
+      fields: "f",
       fetch,
       // biome-ignore lint/suspicious/noExplicitAny: partial pino logger
       log: { info: vi.fn(), warn: vi.fn() } as any,
@@ -124,6 +133,7 @@ describe("OpenRouterClassifier happy path", () => {
       elapsedMs: 250,
       promptTokens: 500,
       completionTokens: 40,
+      relevant: "yes",
       degreeOk: "yes",
       workAuth: "none",
       attempt: 1,

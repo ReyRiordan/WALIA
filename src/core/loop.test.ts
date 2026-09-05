@@ -13,9 +13,12 @@ import { openStore } from "./store.ts";
 const NOW = Date.UTC(2026, 8, 5, 12, 0, 0);
 const POLL_MS = 300_000;
 
-const YES: Verdict = { degreeOk: "yes", workAuth: "none", reason: "fine" };
-const NO: Verdict = { degreeOk: "no", workAuth: "none", reason: "PhD only" };
+const YES: Verdict = { relevant: "yes", degreeOk: "yes", workAuth: "none", reason: "fine" };
+const NO: Verdict = { relevant: "yes", degreeOk: "no", workAuth: "none", reason: "PhD only" };
+const IRRELEVANT: Verdict = { relevant: "no", degreeOk: "yes", workAuth: "none", reason: "FT" };
+const MAYBE_RELEVANT: Verdict = { ...YES, relevant: "unclear" };
 const UNCLEAR: Verdict = {
+  relevant: "unclear",
   degreeOk: "unclear",
   workAuth: "unclear",
   reason: "classifier error: x",
@@ -76,7 +79,14 @@ function config(searches: number): Config {
     recencySec: 3600,
     firstCycleRecencySec: 600,
     maxPages: 5,
-    classifier: { model: "m", program: "p", graduation: "g", reasoningEffort: "low" },
+    classifier: {
+      model: "m",
+      program: "p",
+      graduation: "g",
+      term: "summer 2027",
+      fields: "software engineering",
+      reasoningEffort: "low",
+    },
     dedupe: { windowDays: 14 },
     notifier: "telegram",
   };
@@ -295,6 +305,31 @@ describe("Loop.runCycle", () => {
     const spectrum = FIXTURE_CARDS.filter((c) => c.company === "Spectrum").map((c) => c.id);
     const verdicts = h.store.getJobs(spectrum).map((j) => j.verdict?.degreeOk ?? null);
     expect(verdicts).toEqual(["no", null]);
+  });
+
+  it("relevant no creates no row and the log names the field", async () => {
+    const h = harness({
+      verdicts: (input) => ({
+        verdict: input.company === "Spectrum" ? IRRELEVANT : YES,
+        error: null,
+      }),
+    });
+    const summary = await h.loop.runCycle();
+    expect(summary).toMatchObject({ suppressed: 1, created: FIXTURE_KEYS - 1 });
+    expect(h.sent.some((n) => n.company === "Spectrum")).toBe(false);
+    expect(h.store.keyNotifiedSince("spectrum|2027 summer intern software engineer", 0)).toBe(
+      false,
+    );
+    const suppressedLines = h.log.info.mock.calls.filter(([, msg]) => msg === "group suppressed");
+    expect(suppressedLines).toHaveLength(1);
+    expect(suppressedLines[0]?.[0]).toMatchObject({ field: "relevant", reason: "FT" });
+  });
+
+  it("relevant unclear sends the group untagged", async () => {
+    const h = harness({ verdicts: () => ({ verdict: MAYBE_RELEVANT, error: null }) });
+    const summary = await h.loop.runCycle();
+    expect(summary).toMatchObject({ suppressed: 0, created: FIXTURE_KEYS, sent: FIXTURE_KEYS });
+    expect(h.sent.every((n) => n.tags.length === 0)).toBe(true);
   });
 
   it("a group with no description gets no classify call and no tag", async () => {

@@ -48,7 +48,7 @@ export interface CycleSummary {
   searches: SearchSummary[];
   /** Groups that passed the notification window. */
   groups: number;
-  /** Groups dropped on `degreeOk === "no"`. */
+  /** Groups dropped on `relevant === "no"` or `degreeOk === "no"`. */
   suppressed: number;
   /** Notification rows created this cycle. */
   created: number;
@@ -277,8 +277,9 @@ export class Loop {
         );
       }
     }
-    if (result.verdict.degreeOk === "no") {
-      this.log.info({ key: group.key, reason: result.verdict.reason }, "group suppressed");
+    const field = suppressedBy(result.verdict);
+    if (field !== null) {
+      this.log.info({ key: group.key, field, reason: result.verdict.reason }, "group suppressed");
       return false;
     }
     return true;
@@ -332,6 +333,13 @@ export class Loop {
       void this.tick();
     }, nextAt - now);
   }
+}
+
+/** The verdict field that suppresses the group, relevance first, or null when it goes out. */
+function suppressedBy(verdict: Verdict): "relevant" | "degreeOk" | null {
+  if (verdict.relevant === "no") return "relevant";
+  if (verdict.degreeOk === "no") return "degreeOk";
+  return null;
 }
 
 /** Newest `postedAt` in the group as epoch ms; groups with no timestamp sort first. */

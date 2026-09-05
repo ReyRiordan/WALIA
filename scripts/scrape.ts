@@ -139,7 +139,7 @@ if (saveEval) {
       company: job.company,
       url: job.url,
       description: job.description,
-      expected: { degreeOk: null, workAuth: null },
+      expected: { relevant: null, degreeOk: null, workAuth: null },
       note: "",
     };
     writeFileSync(file, `${JSON.stringify(entry, null, 2)}\n`);

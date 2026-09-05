@@ -13,6 +13,8 @@ export function createClassifier(
     model: config.classifier.model,
     program: config.classifier.program,
     graduation: config.classifier.graduation,
+    term: config.classifier.term,
+    fields: config.classifier.fields,
     reasoningEffort: config.classifier.reasoningEffort,
     ...opts,
   });
@@ -45,6 +47,7 @@ export type {
   ClassifyInput,
   ClassifyResult,
   DegreeOk,
+  Relevant,
   Verdict,
   WorkAuth,
 } from "./types.ts";

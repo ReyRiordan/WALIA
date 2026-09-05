@@ -33,6 +33,8 @@ log.info(
     recencySec: config.recencySec,
     model: config.classifier.model,
     graduation: config.classifier.graduation,
+    term: config.classifier.term,
+    fields: config.classifier.fields,
     reasoningEffort: config.classifier.reasoningEffort,
     notifier: config.notifier,
     dataDir: env.DATA_DIR,

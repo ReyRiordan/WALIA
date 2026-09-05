@@ -35,4 +35,4 @@ A key is covered when any `notifications` row for it has `created_at` within `de
 
 - A pending unsent row covers the key. The new id is not appended to it, so the extra city is lost from the message. That is what "per-city clones collapse" means.
 - The window is measured from `created_at`, never `sent_at`.
-- A job the classifier suppressed (`degree_ok = no`) creates no row, so it never blocks a later clone of the same key.
+- A job the classifier suppressed (`relevant = no` or `degree_ok = no`) creates no row, so it never blocks a later clone of the same key.

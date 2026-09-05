@@ -25,7 +25,7 @@ One process, one cycle at a time. Every collaborator is injected, so `loop.test.
 1. `client.beginCycle()`.
 2. For each search in config order: `scrapeSearch`, then `store.insertJobs` on everything it returned, skipped jobs included. Jobs already in the store are not collected. A posting that matches two searches is `isSeen` by the second and costs one detail fetch. `deferred` is logged and nothing else; the ids come back next cycle. `halted.signal` maps to a `rate_limited` or `blocked` alert; a transient halt is a warning.
 3. `groupByKey` over every fresh job without `skip`, then drop each group whose key has a `notifications` row in the last `dedupe.windowDays`. A covered key never reaches the classifier.
-4. Per group, classify the first job that has a description and store the verdict on that row only. Other clones keep a null verdict. A group with no description anywhere skips the classifier and goes out untagged. `degreeOk === "no"` suppresses the group, which creates no row, so a later clone of the same key is not blocked.
+4. Per group, classify the first job that has a description and store the verdict on that row only. Other clones keep a null verdict. A group with no description anywhere skips the classifier and goes out untagged. `relevant === "no"` or `degreeOk === "no"` suppresses the group, which creates no row, so a later clone of the same key is not blocked. The `group suppressed` log line carries `field: "relevant" | "degreeOk"`, relevance first. `relevant: unclear` goes out untagged; the tags describe eligibility, and a wobbly relevance call is noise.
 5. Sort the surviving groups by the newest `postedAt` among their jobs, ascending, groups with no timestamp first, then `createNotifications` in one transaction. Row ids therefore ascend in posting order across searches and the newest posting is the last message in the chat.
 6. Drain. If `notifier.isReady()` is false the rows wait. Otherwise every `unsentNotifications()` row goes out in id order, so a row left over from a crash or a failed send is sent before this cycle's rows, through the same code. The group is rebuilt with `groupByKey(row.jobs)` and the verdict is taken from whichever job has one. Each success is followed by `markSent` for that one row. A `send` that throws leaves its row unsent, alerts `send_failed`, and the drain moves on. A readiness flip to false mid-drain stops it.
 7. Record `lastCycleAt`, and `lastSuccessfulCycleAt` when nothing threw. Log the `CycleSummary`.
@@ -62,7 +62,7 @@ Logged at info as `cycle finished`, with `stopped: true` when the cycle returned
 | --- | --- |
 | `searches[]` | Per search: `label`, `jobs` fetched, `inserted`, `deferred`, `cardsOnFirstPage`, `halted` signal or null. |
 | `groups` | Groups that passed the window. |
-| `suppressed` | Groups dropped on `degreeOk === "no"`. |
+| `suppressed` | Groups dropped on `relevant === "no"` or `degreeOk === "no"`. |
 | `created` | Notification rows created this cycle. |
 | `sent` | Rows sent this cycle, retries included. |
 | `failed` | Sends that threw. Their rows stay unsent. |

@@ -30,7 +30,7 @@ function group(...jobs: Job[]): Group {
 }
 
 function verdict(v: Partial<Verdict>): Verdict {
-  return { degreeOk: "yes", workAuth: "none", reason: "", ...v };
+  return { relevant: "yes", degreeOk: "yes", workAuth: "none", reason: "", ...v };
 }
 
 describe("escapeHtml", () => {
@@ -60,6 +60,8 @@ describe("toNotification", () => {
 
   it.each<[Partial<Verdict> | null, string[]]>([
     [{ degreeOk: "unclear" }, ["eligibility unclear"]],
+    [{ relevant: "unclear" }, []],
+    [{ relevant: "no" }, []],
     [{ workAuth: "no_sponsorship" }, ["no sponsorship"]],
     [{ workAuth: "citizen_only" }, ["US citizens only"]],
     [{ workAuth: "none" }, []],

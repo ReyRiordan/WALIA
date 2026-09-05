@@ -32,7 +32,7 @@ One SQLite file, `walia.db` under `DATA_DIR`. The caller passes the full path. T
 
 ## Migrations
 
-`MIGRATIONS` is an ordered array of SQL strings in `store.ts`. `PRAGMA user_version` is the cursor. On open, each entry past the current version runs in its own transaction: `BEGIN`, the SQL, `PRAGMA user_version = n`, `COMMIT`. A failure rolls that one back and throws, so the process does not boot on a half-migrated file. No library, no migration files, no down migrations. Adding a column later means appending one string.
+`MIGRATIONS` is an ordered array of SQL strings in `store.ts`. `PRAGMA user_version` is the cursor. On open, each entry past the current version runs in its own transaction: `BEGIN`, the SQL, `PRAGMA user_version = n`, `COMMIT`. A failure rolls that one back and throws, so the process does not boot on a half-migrated file. No library, no migration files, no down migrations. Adding a column means appending one string; migration 2 is `ALTER TABLE jobs ADD COLUMN relevant TEXT`.
 
 ## Schema
 
@@ -47,7 +47,7 @@ One SQLite file, `walia.db` under `DATA_DIR`. The caller passes the full path. T
 | `posted_at` | `Job.postedAt` as unix ms, or NULL. |
 | `first_seen_at` | The `now` passed to `insertJobs`. |
 | `skip` | `stale`, `gone`, or NULL. Skipped jobs are stored so the id never resurfaces. |
-| `degree_ok`, `work_auth`, `classifier_reason`, `classified_at` | The `Verdict`, all NULL until `setVerdict`. |
+| `relevant`, `degree_ok`, `work_auth`, `classifier_reason`, `classified_at` | The `Verdict`, all NULL until `setVerdict`. A row with `relevant` NULL next to a non-null `degree_ok` was classified before migration 2; it reads back as `relevant: "unclear"`. |
 
 `notifications`, one row per dedupe key per cycle, which is one message. Index on `(dedupe_key, created_at)` for the window query.
 

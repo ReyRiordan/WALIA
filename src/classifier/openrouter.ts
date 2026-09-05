@@ -1,7 +1,7 @@
 import type { Logger } from "pino";
 import type { ReasoningEffort } from "../config.ts";
 import { log as rootLog } from "../log.ts";
-import { buildMessages, parseVerdict, VERDICT_JSON_SCHEMA } from "./prompt.ts";
+import { buildMessages, type ProgramFacts, parseVerdict, VERDICT_JSON_SCHEMA } from "./prompt.ts";
 import type { Classifier, ClassifyInput, ClassifyResult, Verdict } from "./types.ts";
 
 export const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
@@ -19,6 +19,8 @@ export interface OpenRouterClassifierOptions {
   model: string;
   program: string;
   graduation: string;
+  term: string;
+  fields: string;
   /** OpenRouter `reasoning.effort`. Omitted from the request when undefined. */
   reasoningEffort?: ReasoningEffort;
   fetch?: Fetch;
@@ -50,7 +52,7 @@ const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(r
 export class OpenRouterClassifier implements Classifier {
   private readonly apiKey: string;
   private readonly model: string;
-  private readonly facts: { program: string; graduation: string };
+  private readonly facts: ProgramFacts;
   private readonly reasoningEffort: ReasoningEffort | undefined;
   private readonly fetch: Fetch;
   private readonly sleep: (ms: number) => Promise<void>;
@@ -60,7 +62,12 @@ export class OpenRouterClassifier implements Classifier {
   constructor(opts: OpenRouterClassifierOptions) {
     this.apiKey = opts.apiKey;
     this.model = opts.model;
-    this.facts = { program: opts.program, graduation: opts.graduation };
+    this.facts = {
+      program: opts.program,
+      graduation: opts.graduation,
+      term: opts.term,
+      fields: opts.fields,
+    };
     this.reasoningEffort = opts.reasoningEffort;
     this.fetch = opts.fetch ?? ((url, init) => globalThis.fetch(url, init));
     this.sleep = opts.sleep ?? defaultSleep;
@@ -91,6 +98,7 @@ export class OpenRouterClassifier implements Classifier {
     );
     return {
       verdict: {
+        relevant: "unclear",
         degreeOk: "unclear",
         workAuth: "unclear",
         reason: `classifier error: ${failed.cause}`,
@@ -184,6 +192,7 @@ export class OpenRouterClassifier implements Classifier {
         status,
         elapsedMs,
         ...tokens,
+        relevant: verdict.relevant,
         degreeOk: verdict.degreeOk,
         workAuth: verdict.workAuth,
       },

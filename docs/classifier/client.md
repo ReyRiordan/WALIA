@@ -9,7 +9,7 @@ RETRY_DELAY_MS = 2_000
 MAX_TOKENS = 1_000
 
 interface OpenRouterClassifierOptions {
-  apiKey: string; model: string; program: string; graduation: string;
+  apiKey: string; model: string; program: string; graduation: string; term: string; fields: string;
   reasoningEffort?: ReasoningEffort;
   fetch?: Fetch; sleep?: (ms: number) => Promise<void>; now?: () => number; log?: Logger;
 }
@@ -49,7 +49,7 @@ OpenRouter wraps upstream provider errors in a 200 body with an `error` object. 
 
 ## Failure yields unclear, never throws
 
-Any failure returns `{ degreeOk: "unclear", workAuth: "unclear", reason: "classifier error: <cause>" }`. The cause is one of these fixed strings:
+Any failure returns `{ relevant: "unclear", degreeOk: "unclear", workAuth: "unclear", reason: "classifier error: <cause>" }`. `relevant: unclear` sends the group, so an OpenRouter outage never suppresses a job. The cause is one of these fixed strings:
 
 | Cause | Meaning |
 | --- | --- |
@@ -71,7 +71,7 @@ There is no code-level spend cap. The scraper's request budget bounds new jobs p
 
 ## Logging
 
-One `info` line per attempt with `model`, `reasoningEffort`, `attempt`, `title`, `company`, `status`, `elapsedMs`, `promptTokens`, `completionTokens`, `reasoningTokens`, and on success `degreeOk` and `workAuth`. An empty reply logs `finishReason`; an error body logs `upstream` and `message`. A retry and the final fallback log at `warn` with the cause. The API key is never logged; `src/log.ts` also redacts it by path.
+One `info` line per attempt with `model`, `reasoningEffort`, `attempt`, `title`, `company`, `status`, `elapsedMs`, `promptTokens`, `completionTokens`, `reasoningTokens`, and on success `relevant`, `degreeOk`, and `workAuth`. An empty reply logs `finishReason`; an error body logs `upstream` and `message`. A retry and the final fallback log at `warn` with the cause. The API key is never logged; `src/log.ts` also redacts it by path.
 
 ## Factory
 

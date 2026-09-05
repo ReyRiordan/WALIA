@@ -26,7 +26,7 @@ Every line has a `component`: `loop`, `scraper`, `classifier`, `notifier`, `aler
 
 | Line | Meaning |
 | --- | --- |
-| `config loaded` | Boot. Lists searches, intervals, model, `dataDir`, `port`. |
+| `config loaded` | Boot. Lists searches, intervals, model, `graduation`, `term`, `fields`, `dataDir`, `port`. |
 | `telegram bot ready` | `getMe` passed. |
 | `health server listening` | `/health` is up. Railway's healthcheck passes from here. |
 | `cycle started` | With `recencySec` in use, 600 on the first cycle by default. |
@@ -35,7 +35,7 @@ Every line has a `component`: `loop`, `scraper`, `classifier`, `notifier`, `aler
 | `search halted` | A transient scrape error ended the search early. |
 | `request skipped, backoff pause active` | Rate limited or blocked; nothing fetched until `pausedUntil`. |
 | `openrouter request` | One per classifier attempt, with tokens and the verdict. |
-| `group suppressed` | `degreeOk: "no"`. |
+| `group suppressed` | With `field`: `relevant` or `degreeOk` came back `no`. |
 | `no description in group; sending untagged` | No classifier call for this group. |
 | `notification sent` | With `messageId`, and `retry: true` when the row came from an earlier cycle. |
 | `send failed; row stays unsent` | Retried next cycle. |

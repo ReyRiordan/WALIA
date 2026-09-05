@@ -33,6 +33,8 @@ The loop hands over plain data and each adapter owns its rendering. A WhatsApp a
 
 | Verdict field | Value | Tag |
 | --- | --- | --- |
+| `relevant` | `unclear` | none. The tags describe eligibility, not relevance. |
+| `relevant` | `no` | none. The loop suppresses the job; it never reaches the notifier. |
 | `degreeOk` | `unclear` | `eligibility unclear` |
 | `degreeOk` | `no` | none. The loop suppresses the job; it never reaches the notifier. |
 | `workAuth` | `no_sponsorship` | `no sponsorship` |
