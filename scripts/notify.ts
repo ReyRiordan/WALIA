@@ -17,7 +17,10 @@ const sample: Notification = {
     { location: "Greenwood Village, CO", url: "https://www.linkedin.com/jobs/view/4000000001" },
     { location: "Englewood, CO", url: "https://www.linkedin.com/jobs/view/4000000002" },
   ],
-  tags: ["eligibility unclear", "no sponsorship"],
+  tags: [
+    { text: "eligibility unclear", level: "info" },
+    { text: "no sponsorship", level: "info" },
+  ],
 };
 
 const notifier = createNotifier(config, env);

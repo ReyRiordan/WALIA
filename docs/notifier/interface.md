@@ -4,11 +4,11 @@ Code: `src/notifier/types.ts` (types), `src/notifier/format.ts` (`toNotification
 
 ```ts
 interface Notification {
-  key: string;                                   // dedupe key, logging only
+  key: string;                                      // dedupe key, logging only
   title: string;
   company: string;
-  postings: { location: string; url: string }[]; // first-appearance order, deduped by location
-  tags: string[];                                // pre-worded, may be empty
+  postings: { location: string; url: string }[];    // first-appearance order, deduped by location
+  tags: { text: string; level: "info" | "warn" }[]; // pre-worded, may be empty
 }
 
 interface Notifier {
@@ -29,18 +29,20 @@ There is no digest. Each dedupe key is one `Notification`, one message, and one 
 
 The loop hands over plain data and each adapter owns its rendering. A WhatsApp adapter has no HTML links, so pre-rendered text would be re-rendered anyway, and passing `Group` plus a verdict would tie the notifier to core and classifier vocabulary.
 
-`toNotification` builds it from a `Group` and the group's single verdict. One posting per location, first appearance wins, so each city links to one listing. Tags are worded here, once, and adapters print them:
+`toNotification` builds it from a `Group` and the group's single verdict. One posting per location, first appearance wins, so each city links to one listing. Tags are worded and levelled here, once, and adapters print them:
 
-| Verdict field | Value | Tag |
-| --- | --- | --- |
-| `relevant` | `unclear` | none. The tags describe eligibility, not relevance. |
-| `relevant` | `no` | none. The loop suppresses the job; it never reaches the notifier. |
-| `degreeOk` | `unclear` | `eligibility unclear` |
-| `degreeOk` | `no` | none. The loop suppresses the job; it never reaches the notifier. |
-| `workAuth` | `no_sponsorship` | `no sponsorship` |
-| `workAuth` | `citizen_only` | `US citizens only` |
-| `workAuth` | `none` or `unclear` | none |
-| verdict | `null` | none |
+| Verdict field | Value | Tag | Level |
+| --- | --- | --- | --- |
+| `relevant` | `unclear` | none. The tags describe eligibility, not relevance. | |
+| `relevant` | `no` | none. The loop suppresses the job; it never reaches the notifier. | |
+| `degreeOk` | `unclear` | `eligibility unclear` | `info` |
+| `degreeOk` | `no` | none. The loop suppresses the job; it never reaches the notifier. | |
+| `workAuth` | `no_sponsorship` | `no sponsorship` | `info` |
+| `workAuth` | `citizen_only` | `US citizens only` | `warn` |
+| `workAuth` | `none` or `unclear` | none | |
+| verdict | `null` | none | |
+
+`warn` is for the one tag that rules most of the group out. The level lives in the data so a second adapter gets the same split without reading the wording.
 
 Work-auth `unclear` is the default whenever the description does not say, so tagging it would make everyone ignore the tag line. `no sponsorship` and `US citizens only` stay separate because they exclude different people. A `null` verdict means the group was never classified, which is a group with no description anywhere. There is one verdict per group, so there is no merge rule.
 

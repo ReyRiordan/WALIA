@@ -3,7 +3,7 @@ import type { Verdict } from "../classifier/types.ts";
 import type { Group } from "../core/dedupe.ts";
 import type { Job } from "../scraper/types.ts";
 import { escapeHtml, formatNotification, toNotification } from "./format.ts";
-import type { Notification } from "./types.ts";
+import type { Notification, Tag } from "./types.ts";
 
 function job(id: string, location: string): Job {
   return {
@@ -58,17 +58,27 @@ describe("toNotification", () => {
     ]);
   });
 
-  it.each<[Partial<Verdict> | null, string[]]>([
-    [{ degreeOk: "unclear" }, ["eligibility unclear"]],
+  it.each<[Partial<Verdict> | null, Tag[]]>([
+    [{ degreeOk: "unclear" }, [{ text: "eligibility unclear", level: "info" }]],
     [{ relevant: "unclear" }, []],
     [{ relevant: "no" }, []],
-    [{ workAuth: "no_sponsorship" }, ["no sponsorship"]],
-    [{ workAuth: "citizen_only" }, ["US citizens only"]],
+    [{ workAuth: "no_sponsorship" }, [{ text: "no sponsorship", level: "info" }]],
+    [{ workAuth: "citizen_only" }, [{ text: "US citizens only", level: "warn" }]],
     [{ workAuth: "none" }, []],
     [{ workAuth: "unclear" }, []],
     [
       { degreeOk: "unclear", workAuth: "no_sponsorship" },
-      ["eligibility unclear", "no sponsorship"],
+      [
+        { text: "eligibility unclear", level: "info" },
+        { text: "no sponsorship", level: "info" },
+      ],
+    ],
+    [
+      { degreeOk: "unclear", workAuth: "citizen_only" },
+      [
+        { text: "eligibility unclear", level: "info" },
+        { text: "US citizens only", level: "warn" },
+      ],
     ],
     [null, []],
   ])("maps verdict %j to tags %j", (v, tags) => {
@@ -92,27 +102,48 @@ describe("formatNotification", () => {
     expect(formatNotification(base)).toBe(
       [
         "<b>Software Engineer Intern</b>",
-        "Spectrum",
+        "<i>Spectrum</i>",
         '<a href="https://www.linkedin.com/jobs/view/111">Greenwood Village, CO</a>',
       ].join("\n"),
     );
   });
 
-  it("renders two postings and both tags", () => {
+  it("renders two postings and an info tag line", () => {
     const n: Notification = {
       ...base,
       postings: [
         ...base.postings,
         { location: "Englewood, CO", url: "https://www.linkedin.com/jobs/view/222" },
       ],
-      tags: ["eligibility unclear", "no sponsorship"],
+      tags: [
+        { text: "eligibility unclear", level: "info" },
+        { text: "no sponsorship", level: "info" },
+      ],
     };
     expect(formatNotification(n)).toBe(
       [
         "<b>Software Engineer Intern</b>",
-        "Spectrum",
+        "<i>Spectrum</i>",
         '<a href="https://www.linkedin.com/jobs/view/111">Greenwood Village, CO</a> · <a href="https://www.linkedin.com/jobs/view/222">Englewood, CO</a>',
-        "⚠️ eligibility unclear · no sponsorship",
+        "ℹ️ eligibility unclear · no sponsorship",
+      ].join("\n"),
+    );
+  });
+
+  it("one warn tag turns the whole line into a warning", () => {
+    const n: Notification = {
+      ...base,
+      tags: [
+        { text: "eligibility unclear", level: "info" },
+        { text: "US citizens only", level: "warn" },
+      ],
+    };
+    expect(formatNotification(n)).toBe(
+      [
+        "<b>Software Engineer Intern</b>",
+        "<i>Spectrum</i>",
+        '<a href="https://www.linkedin.com/jobs/view/111">Greenwood Village, CO</a>',
+        "⚠️ eligibility unclear · US citizens only",
       ].join("\n"),
     );
   });
@@ -127,7 +158,7 @@ describe("formatNotification", () => {
     expect(formatNotification(n)).toBe(
       [
         "<b>R&amp;D Intern &lt;Summer&gt;</b>",
-        "Bain &amp; &quot;Co&quot;",
+        "<i>Bain &amp; &quot;Co&quot;</i>",
         '<a href="https://www.linkedin.com/jobs/view/1?a=1&amp;b=2">A &lt;B&gt;</a>',
       ].join("\n"),
     );
