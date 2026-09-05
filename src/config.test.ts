@@ -6,7 +6,13 @@ import { ConfigError, parseConfig, parseEnv } from "./config.ts";
 import { log } from "./log.ts";
 
 const BASE = "https://www.linkedin.com/jobs/search/";
-const CLASSIFIER = { model: "test/model", program: "test program", graduation: "May 2028" };
+const CLASSIFIER = {
+  model: "test/model",
+  program: "test program",
+  graduation: "May 2028",
+  term: "summer 2027",
+  fields: "software engineering",
+};
 
 function config(url: string, extra: Record<string, unknown> = {}) {
   return parseConfig({
@@ -96,18 +102,22 @@ describe("config defaults and bounds", () => {
     });
   });
 
-  it("requires classifier.model, program, and graduation", () => {
+  it.each(["model", "program", "graduation", "term", "fields"] as const)(
+    "requires classifier.%s",
+    (field) => {
+      const { [field]: removed, ...rest } = CLASSIFIER;
+      expect(removed).toBeDefined();
+      expect(() => config(`${BASE}?keywords=x`, { classifier: rest })).toThrow(
+        new RegExp(`classifier\\.${field}`),
+      );
+      expect(() => config(`${BASE}?keywords=x`, { classifier: { ...rest, [field]: "" } })).toThrow(
+        new RegExp(`classifier\\.${field}`),
+      );
+    },
+  );
+
+  it("requires the classifier block", () => {
     expect(() => parseConfig({ searches: [{ url: `${BASE}?keywords=x` }] })).toThrow(/classifier/);
-    const { program, ...noProgram } = CLASSIFIER;
-    expect(() => config(`${BASE}?keywords=x`, { classifier: noProgram })).toThrow(
-      /classifier\.program/,
-    );
-    const { graduation, ...noGraduation } = CLASSIFIER;
-    expect(() => config(`${BASE}?keywords=x`, { classifier: noGraduation })).toThrow(
-      /classifier\.graduation/,
-    );
-    expect(program).toBeDefined();
-    expect(graduation).toBeDefined();
   });
 
   it("defaults classifier.reasoningEffort to low and rejects unknown values", () => {

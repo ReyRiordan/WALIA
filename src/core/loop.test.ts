@@ -76,7 +76,14 @@ function config(searches: number): Config {
     recencySec: 3600,
     firstCycleRecencySec: 600,
     maxPages: 5,
-    classifier: { model: "m", program: "p", graduation: "g", reasoningEffort: "low" },
+    classifier: {
+      model: "m",
+      program: "p",
+      graduation: "g",
+      term: "summer 2027",
+      fields: "software engineering",
+      reasoningEffort: "low",
+    },
     dedupe: { windowDays: 14 },
     notifier: "telegram",
   };

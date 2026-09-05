@@ -77,6 +77,10 @@ export const ConfigSchema = z
       program: z.string().min(1),
       /** Expected graduation, e.g. "May 2028". Goes into the prompt verbatim. */
       graduation: z.string().min(1),
+      /** The internship term the searches target, e.g. "summer 2027". Goes into the prompt verbatim. */
+      term: z.string().min(1),
+      /** The fields a posting must be in to be relevant, in prose. Goes into the prompt verbatim. */
+      fields: z.string().min(1),
       /** OpenRouter's unified `reasoning.effort`. Reasoning tokens count against MAX_TOKENS. */
       reasoningEffort: z.enum(REASONING_EFFORTS).default("low"),
     }),
