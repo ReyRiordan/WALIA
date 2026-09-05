@@ -1,7 +1,7 @@
 {
   "searches": [
     {
-      "url": "https://www.linkedin.com/jobs/search/?keywords=%22summer%202027%22%20(SWE%20OR%20%22software%20engineer%22%20OR%20%22machine%20learning%22%20OR%20AI)%20intern&geoId=103644278&sortBy=DD",
+      "url": "https://www.linkedin.com/jobs/search/?keywords=%22summer%202027%22%20(SWE%20OR%20%22software%20engineer%22%20OR%20%22machine%20learning%22%20OR%20AI)%20(%22intern%22%20OR%20%22internship%22)&geoId=103644278&sortBy=DD",
       "label": "SWE/ML intern US"
     }
   ],
