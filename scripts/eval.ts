@@ -1,17 +1,24 @@
 /**
  * Runs the classifier over every labelled file in test/eval/eligibility/ against real OpenRouter.
  * Prints a confusion matrix per field and every mismatch with the model's reason. Exits 1 on any
- * false `no` for degreeOk (label yes or unclear, actual no) or any non-null error. Usage:
+ * false `no` for relevant or degreeOk (label yes or unclear, actual no) or any non-null error.
+ * Usage:
  *   pnpm eval:classifier
  */
 import { readdirSync, readFileSync } from "node:fs";
 import { z } from "zod";
-import { createClassifier, type DegreeOk, type WorkAuth } from "../src/classifier/index.ts";
+import {
+  createClassifier,
+  type DegreeOk,
+  type Relevant,
+  type WorkAuth,
+} from "../src/classifier/index.ts";
 import { loadConfig, parseEnv } from "../src/config.ts";
 import { log } from "../src/log.ts";
 
 const EVAL_DIR = new URL("../test/eval/eligibility/", import.meta.url);
 
+const RELEVANT: Relevant[] = ["yes", "no", "unclear"];
 const DEGREE: DegreeOk[] = ["yes", "no", "unclear"];
 const WORK: WorkAuth[] = ["none", "citizen_only", "no_sponsorship", "unclear"];
 
@@ -22,6 +29,7 @@ const EvalFile = z.object({
   url: z.string(),
   description: z.string(),
   expected: z.object({
+    relevant: z.enum(RELEVANT).nullable(),
     degreeOk: z.enum(DEGREE).nullable(),
     workAuth: z.enum(WORK).nullable(),
   }),
@@ -40,7 +48,7 @@ const labelled: EvalFile[] = [];
 let unlabelled = 0;
 for (const name of files) {
   const entry = EvalFile.parse(JSON.parse(readFileSync(new URL(name, EVAL_DIR), "utf8")));
-  if (entry.expected.degreeOk === null || entry.expected.workAuth === null) {
+  if (Object.values(entry.expected).some((v) => v === null)) {
     unlabelled += 1;
     continue;
   }
@@ -48,7 +56,7 @@ for (const name of files) {
 }
 log.info({ labelled: labelled.length, unlabelled, model: config.classifier.model }, "eval start");
 if (labelled.length === 0) {
-  log.error("no labelled files; fill in expected.degreeOk and expected.workAuth first");
+  log.error("no labelled files; fill in every expected field first");
   process.exit(1);
 }
 
@@ -61,6 +69,7 @@ function emptyMatrix<T extends string>(values: T[]): Record<T, Record<T, number>
   }
   return m;
 }
+const relevantMatrix = emptyMatrix(RELEVANT);
 const degreeMatrix = emptyMatrix(DEGREE);
 const workMatrix = emptyMatrix(WORK);
 
@@ -71,18 +80,26 @@ const started = Date.now();
 
 for (const entry of labelled) {
   const { verdict, error } = await classifier.classify(entry);
-  const expected = entry.expected as { degreeOk: DegreeOk; workAuth: WorkAuth };
+  const expected = entry.expected as {
+    relevant: Relevant;
+    degreeOk: DegreeOk;
+    workAuth: WorkAuth;
+  };
   if (error !== null) {
     errors += 1;
     log.error({ id: entry.id, title: entry.title, error }, "classifier error");
     continue;
   }
+  relevantMatrix[expected.relevant][verdict.relevant] += 1;
   degreeMatrix[expected.degreeOk][verdict.degreeOk] += 1;
   workMatrix[expected.workAuth][verdict.workAuth] += 1;
+  const relevantMiss = verdict.relevant !== expected.relevant;
   const degreeMiss = verdict.degreeOk !== expected.degreeOk;
   const workMiss = verdict.workAuth !== expected.workAuth;
-  if (degreeMiss && verdict.degreeOk === "no") falseNo += 1;
-  if (degreeMiss || workMiss) {
+  const isFalseNo =
+    (relevantMiss && verdict.relevant === "no") || (degreeMiss && verdict.degreeOk === "no");
+  if (isFalseNo) falseNo += 1;
+  if (relevantMiss || degreeMiss || workMiss) {
     mismatches += 1;
     log.warn(
       {
@@ -91,11 +108,15 @@ for (const entry of labelled) {
         company: entry.company,
         url: entry.url,
         expected,
-        actual: { degreeOk: verdict.degreeOk, workAuth: verdict.workAuth },
+        actual: {
+          relevant: verdict.relevant,
+          degreeOk: verdict.degreeOk,
+          workAuth: verdict.workAuth,
+        },
         reason: verdict.reason,
         note: entry.note || undefined,
       },
-      degreeMiss && verdict.degreeOk === "no" ? "FALSE NO" : "mismatch",
+      isFalseNo ? "FALSE NO" : "mismatch",
     );
   } else {
     log.info({ id: entry.id, title: entry.title, ...expected, reason: verdict.reason }, "match");
@@ -117,6 +138,7 @@ function printMatrix<T extends string>(
   process.stdout.write(`\n${lines.join("\n")}\n\n`);
 }
 
+printMatrix("relevant", RELEVANT, relevantMatrix);
 printMatrix("degreeOk", DEGREE, degreeMatrix);
 printMatrix("workAuth", WORK, workMatrix);
 
