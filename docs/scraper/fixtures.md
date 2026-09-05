@@ -5,12 +5,14 @@ Code: `scripts/scrape.ts`, `test/helpers/fixture.ts`. Fixtures live in `test/fix
 ## pnpm scrape
 
 ```
-pnpm scrape [--search <label>] [--pages <n>] [--recency <sec>] [--save-fixtures]
+pnpm scrape [--search <label>] [--pages <n>] [--recency <sec>] [--save-fixtures] [--save-eval]
 ```
 
 Runs one real `scrapeSearch` with `isSeen: () => false` against the first configured search, or the one whose label matches `--search`. It loads `.env` and `CONFIG_PATH` the same way the app does and honours `PROXY_URL`. `--pages` defaults to 1 and `--recency` to `recencySec` from config. Output goes through pino-pretty: one line per request with status, elapsed time, and count, then one line per job with id, title, company, location, `postedAt`, `skip`, and description length, then a summary with `deferred` and `halted`.
 
 `--save-fixtures` tees the raw bodies of specific requests into `test/fixtures/` under stable names. After the scrape it resets the budget and makes two extra requests: the fragment for the first card, captured even when the view page already had everything, and a search page at `start=990`, which is the highest offset LinkedIn answers with an empty 200 rather than a 400.
+
+`--save-eval` writes every scraped job with a description as an unlabelled classifier eval file under `test/eval/eligibility/`, never overwriting. See docs/classifier/eval.md.
 
 ## Files
 

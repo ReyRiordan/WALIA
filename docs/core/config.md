@@ -6,7 +6,7 @@ Two inputs, both validated with zod before anything else runs. Any failure logs 
 
 ## config.json
 
-Pure JSON, no env interpolation. `CONFIG_PATH` selects an alternate file for dev runs, such as one with fewer searches. The Telegram chat ids are env, not config, so a private test group is a matter of `.env`. `searches` and `classifier.model` are required; the rest default.
+Pure JSON, no env interpolation. `CONFIG_PATH` selects an alternate file for dev runs, such as one with fewer searches. The Telegram chat ids are env, not config, so a private test group is a matter of `.env`. `searches`, `classifier.model`, `classifier.program`, and `classifier.graduation` are required; the rest default.
 
 | Field | Default | Notes |
 | --- | --- | --- |
@@ -17,6 +17,9 @@ Pure JSON, no env interpolation. `CONFIG_PATH` selects an alternate file for dev
 | `firstCycleRecencySec` | 600 | `f_TPR` window on the first cycle after boot. |
 | `maxPages` | 5 | Search pages fetched per search per cycle. |
 | `classifier.model` | required | OpenRouter model id. No default because it sets the cost. |
+| `classifier.program` | required | Who the students are, in prose. Goes into the prompt verbatim. See docs/classifier/prompt.md. |
+| `classifier.graduation` | required | Expected graduation, e.g. `"May 2028"`. Goes into the prompt verbatim. |
+| `classifier.reasoningEffort` | `"low"` | OpenRouter `reasoning.effort`: `none`, `minimal`, `low`, `medium`, `high`, `xhigh`. See docs/classifier/client.md. |
 | `dedupe.windowDays` | 14 | |
 | `notifier` | `"telegram"` | Enum with the one value. |
 
