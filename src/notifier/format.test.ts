@@ -30,7 +30,7 @@ function group(...jobs: Job[]): Group {
 }
 
 function verdict(v: Partial<Verdict>): Verdict {
-  return { degreeOk: "yes", workAuth: "none", reason: "", ...v };
+  return { relevant: "yes", degreeOk: "yes", workAuth: "none", reason: "", ...v };
 }
 
 describe("escapeHtml", () => {

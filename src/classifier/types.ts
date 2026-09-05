@@ -1,3 +1,6 @@
+/** Whether the posting is an internship for the configured term in the configured fields. */
+export type Relevant = "yes" | "no" | "unclear";
+
 /** Whether the posting's degree requirement admits a master's student. */
 export type DegreeOk = "yes" | "no" | "unclear";
 
@@ -6,6 +9,7 @@ export type WorkAuth = "none" | "citizen_only" | "no_sponsorship" | "unclear";
 
 /** The classifier's answer for one job. Stored on the job row and read by the loop. */
 export interface Verdict {
+  relevant: Relevant;
   degreeOk: DegreeOk;
   workAuth: WorkAuth;
   reason: string;

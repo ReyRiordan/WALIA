@@ -1,7 +1,7 @@
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { DatabaseSync, type StatementSync } from "node:sqlite";
-import type { DegreeOk, Verdict, WorkAuth } from "../classifier/types.ts";
+import type { DegreeOk, Relevant, Verdict, WorkAuth } from "../classifier/types.ts";
 import type { Job } from "../scraper/types.ts";
 import { dedupeKey, type Group } from "./dedupe.ts";
 
@@ -52,6 +52,7 @@ export const MIGRATIONS: string[] = [
     message_id   TEXT
   );
   CREATE INDEX notifications_key_created ON notifications(dedupe_key, created_at);`,
+  "ALTER TABLE jobs ADD COLUMN relevant TEXT",
 ];
 
 interface JobRow {
@@ -65,6 +66,8 @@ interface JobRow {
   first_seen_at: number;
   search_label: string;
   skip: "stale" | "gone" | null;
+  /** NULL on rows classified before the column existed; read back as "unclear". */
+  relevant: Relevant | null;
   degree_ok: DegreeOk | null;
   work_auth: WorkAuth | null;
   classifier_reason: string | null;
@@ -122,7 +125,8 @@ export class Store {
     );
     this.#getJob = db.prepare("SELECT * FROM jobs WHERE linkedin_id = ?");
     this.#setVerdict = db.prepare(
-      `UPDATE jobs SET degree_ok = ?, work_auth = ?, classifier_reason = ?, classified_at = ?
+      `UPDATE jobs SET relevant = ?, degree_ok = ?, work_auth = ?, classifier_reason = ?,
+         classified_at = ?
        WHERE linkedin_id = ?`,
     );
     this.#keyNotifiedSince = db.prepare(
@@ -191,7 +195,14 @@ export class Store {
   }
 
   setVerdict(id: string, verdict: Verdict, now: number): void {
-    this.#setVerdict.run(verdict.degreeOk, verdict.workAuth, verdict.reason, now, id);
+    this.#setVerdict.run(
+      verdict.relevant,
+      verdict.degreeOk,
+      verdict.workAuth,
+      verdict.reason,
+      now,
+      id,
+    );
   }
 
   /** True when any notification row for the key, sent or not, has `created_at >= sinceMs`. */
@@ -246,7 +257,12 @@ function toStoredJob(row: JobRow): StoredJob {
     verdict:
       row.degree_ok === null || row.work_auth === null
         ? null
-        : { degreeOk: row.degree_ok, workAuth: row.work_auth, reason: row.classifier_reason ?? "" },
+        : {
+            relevant: row.relevant ?? "unclear",
+            degreeOk: row.degree_ok,
+            workAuth: row.work_auth,
+            reason: row.classifier_reason ?? "",
+          },
   };
   if (row.skip !== null) job.skip = row.skip;
   return job;

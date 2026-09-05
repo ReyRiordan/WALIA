@@ -8,7 +8,12 @@ import {
   VerdictSchema,
 } from "./prompt.ts";
 
-const FACTS = { program: "master's students in the Test Program", graduation: "May 2028" };
+const FACTS = {
+  program: "master's students in the Test Program",
+  graduation: "May 2028",
+  term: "summer 2027",
+  fields: "software engineering and machine learning",
+};
 const INPUT = { title: "SWE Intern", company: "Acme", description: "Build things." };
 
 describe("buildMessages", () => {
@@ -17,6 +22,8 @@ describe("buildMessages", () => {
     expect(system?.role).toBe("system");
     expect(system?.content).toContain(FACTS.program);
     expect(system?.content).toContain(FACTS.graduation);
+    expect(system?.content).toContain(FACTS.term);
+    expect(system?.content).toContain(FACTS.fields);
     expect(user?.role).toBe("user");
     expect(user?.content).toContain("Title: SWE Intern");
     expect(user?.content).toContain("Company: Acme");
@@ -41,15 +48,31 @@ describe("buildMessages", () => {
 describe("VERDICT_JSON_SCHEMA", () => {
   it("lists the same enum values as the zod mirror", () => {
     const props = VERDICT_JSON_SCHEMA.schema.properties;
+    expect([...props.relevant.enum]).toEqual(VerdictSchema.shape.relevant.options);
     expect([...props.degree_ok.enum]).toEqual(VerdictSchema.shape.degree_ok.options);
     expect([...props.work_auth.enum]).toEqual(VerdictSchema.shape.work_auth.options);
     expect([...VERDICT_JSON_SCHEMA.schema.required]).toEqual(Object.keys(VerdictSchema.shape));
   });
+
+  it("asks for relevant first so the model decides it before eligibility", () => {
+    expect(Object.keys(VERDICT_JSON_SCHEMA.schema.properties)[0]).toBe("relevant");
+    expect(VERDICT_JSON_SCHEMA.schema.required[0]).toBe("relevant");
+  });
 });
 
 describe("parseVerdict", () => {
-  const good = { degree_ok: "yes", work_auth: "no_sponsorship", reason: "Says BS/MS." };
-  const expected = { degreeOk: "yes", workAuth: "no_sponsorship", reason: "Says BS/MS." };
+  const good = {
+    relevant: "yes",
+    degree_ok: "yes",
+    work_auth: "no_sponsorship",
+    reason: "Says BS/MS.",
+  };
+  const expected = {
+    relevant: "yes",
+    degreeOk: "yes",
+    workAuth: "no_sponsorship",
+    reason: "Says BS/MS.",
+  };
 
   it("parses strict JSON", () => {
     expect(parseVerdict(JSON.stringify(good))).toEqual(expected);
@@ -67,9 +90,13 @@ describe("parseVerdict", () => {
 
   it("rejects a bad enum value", () => {
     expect(parseVerdict(JSON.stringify({ ...good, degree_ok: "maybe" }))).toBeNull();
+    expect(parseVerdict(JSON.stringify({ ...good, relevant: "maybe" }))).toBeNull();
   });
 
   it("rejects a missing key", () => {
+    const { relevant, ...noRelevant } = good;
+    expect(relevant).toBe("yes");
+    expect(parseVerdict(JSON.stringify(noRelevant))).toBeNull();
     expect(parseVerdict(JSON.stringify({ degree_ok: "yes", work_auth: "none" }))).toBeNull();
   });
 

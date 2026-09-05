@@ -13,9 +13,10 @@ import { openStore } from "./store.ts";
 const NOW = Date.UTC(2026, 8, 5, 12, 0, 0);
 const POLL_MS = 300_000;
 
-const YES: Verdict = { degreeOk: "yes", workAuth: "none", reason: "fine" };
-const NO: Verdict = { degreeOk: "no", workAuth: "none", reason: "PhD only" };
+const YES: Verdict = { relevant: "yes", degreeOk: "yes", workAuth: "none", reason: "fine" };
+const NO: Verdict = { relevant: "yes", degreeOk: "no", workAuth: "none", reason: "PhD only" };
 const UNCLEAR: Verdict = {
+  relevant: "unclear",
   degreeOk: "unclear",
   workAuth: "unclear",
   reason: "classifier error: x",
