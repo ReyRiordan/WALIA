@@ -1,6 +1,6 @@
 # WALIA
 
-WALIA polls LinkedIn's public (logged-out) job search for new internship postings that match saved searches, runs each posting through an LLM eligibility check, dedupes it against a persistent store, and posts a digest of new matches to a Telegram group of master's students. The name predates the switch from WhatsApp to Telegram; delivery sits behind a notifier interface so a WhatsApp adapter can be added later.
+WALIA polls LinkedIn's public (logged-out) job search for new internship postings that match saved searches, runs each posting through an LLM eligibility check, dedupes it against a persistent store, and posts each new match to a Telegram group of master's students. The name predates the switch from WhatsApp to Telegram; delivery sits behind a notifier interface so a WhatsApp adapter can be added later.
 
 ## Codebase
 
@@ -8,7 +8,7 @@ Source lives in src/, one directory per component (`src/core`, `src/scraper`, `s
 
 - docs/scraper/ - LinkedIn fetching and parsing
 - docs/classifier/ - LLM eligibility check via OpenRouter
-- docs/notifier/ - Telegram delivery, digest formatting, admin alerts
+- docs/notifier/ - Telegram delivery, message formatting, admin alerts
 - docs/core/ - polling loop, store, dedupe, config
 - docs/operations/ - running, deploying to Railway, alerting
 
@@ -24,8 +24,9 @@ Keep the docs current. Do not end a session with changes and stale docs. Docs de
 
 pnpm 10 (`npm i -g pnpm`, then `pnpm install`).
 
-- `pnpm dev` runs `src/index.ts` under `node --watch` with `.env` loaded if present, piped through pino-pretty. Set `CONFIG_PATH` to point at a config with a private test group.
+- `pnpm dev` runs `src/index.ts` under `node --watch` with `.env` loaded if present, piped through pino-pretty. Point `TELEGRAM_GROUP_CHAT_ID` in `.env` at a private test group first; `CONFIG_PATH` selects an alternate config.json.
 - `pnpm scrape [--search <label>] [--pages <n>] [--recency <sec>] [--save-fixtures]` runs one real search against LinkedIn and prints every request and job. With `--save-fixtures` it refreshes test/fixtures/. See docs/scraper/fixtures.md.
+- `pnpm notify:test` sends one sample notification to the group and one line to the admin chat over real Telegram. Point `TELEGRAM_GROUP_CHAT_ID` at a private test group first.
 - `pnpm test` runs vitest once. `pnpm lint` runs Biome check. `pnpm format` writes Biome formatting. `pnpm typecheck` runs tsc over src and test.
 - `pnpm build` emits dist/ from tsconfig.build.json (tests excluded). `pnpm start` runs dist/index.js.
 - `docker build -t walia .` then `docker run --env-file .env walia` mirrors the Railway deploy.
@@ -42,9 +43,9 @@ Use the GitHub CLI (`gh`) for all GitHub-related tasks. Work is tracked as GitHu
 - **card**: one `<li>` in a search response. Yields id, title, company, location, posted date.
 - **detail**: the job view page fetched per new id for the full description (JSON-LD).
 - **dedupe key**: `normalise(company) + "|" + normalise(title)`, location excluded, so per-city clones of one role collapse.
-- **digest**: the single message sent per cycle, one line per dedupe key with locations grouped.
+- **notification**: one message per dedupe key, with each location linked to its own posting and an optional tag line.
 - **stale**: `skip` reason for a job whose detail timestamp is older than `recencySec`. Stored as seen, never sent.
 - **gone**: `skip` reason for a job whose detail fetch returned 404 or 410. Stored as seen, never sent.
 - **deferred**: an unseen id that got no detail fetch because the cycle budget ran out. Counted, not queued; it is found again next cycle.
 - **soft filter**: classifier verdict `degree_ok = no` suppresses a job; `unclear` sends it with a tag; missing description sends it untagged.
-- **notifier**: the delivery interface (start, isReady, sendDigest, sendAdmin). Telegram is the first adapter.
+- **notifier**: the delivery interface (start, isReady, send, sendAdmin, stop). Telegram is the first adapter.

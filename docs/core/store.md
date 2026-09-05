@@ -49,25 +49,25 @@ One SQLite file, `walia.db` under `DATA_DIR`. The caller passes the full path. T
 | `skip` | `stale`, `gone`, or NULL. Skipped jobs are stored so the id never resurfaces. |
 | `degree_ok`, `work_auth`, `classifier_reason`, `classified_at` | The `Verdict`, all NULL until `setVerdict`. |
 
-`notifications`, one row per dedupe key per cycle, which is one digest line. Index on `(dedupe_key, created_at)` for the window query.
+`notifications`, one row per dedupe key per cycle, which is one message. Index on `(dedupe_key, created_at)` for the window query.
 
 | Column | Meaning |
 | --- | --- |
 | `id` | Rowid. Returned by `createNotifications`. |
 | `dedupe_key` | The group's key. |
-| `linkedin_ids` | JSON array of the ids in that line. A row whose JSON is not a string array throws on read, since that means corruption. There is no join table; nothing asks "which notification contained job X". |
+| `linkedin_ids` | JSON array of the ids in that message. A row whose JSON is not a string array throws on read, since that means corruption. There is no join table; nothing asks "which notification contained job X". |
 | `created_at` | The `now` passed to `createNotifications`. The window is measured from this. |
-| `sent_at`, `message_id` | NULL until `markSent`. `message_id` repeats across every row of one digest. |
+| `sent_at`, `message_id` | NULL until `markSent`. `message_id` is that row's own Telegram message id. |
 
 Every `*_at` column is an integer of unix milliseconds. `Job.postedAt` maps through `getTime()` on write and `new Date()` on read.
 
 ## Notification lifecycle
 
 1. The loop calls `createNotifications` with the groups that passed the window and the verdicts. All rows land in one transaction before anything is sent.
-2. It sends one digest message.
-3. It calls `markSent` with every row id and the message id, in a second transaction.
+2. For each row, oldest first, it sends one message.
+3. As each send resolves it calls `markSent` with that one row id and its message id.
 
-If the process dies between steps 1 and 3, the next boot finds the rows through `unsentNotifications` and retries the send. A retry is a duplicate message at worst, never a lost one. `keyNotifiedSince` counts unsent rows too, so a crash cannot make the same key send twice as two separate digests.
+If the process dies mid-cycle, the next boot finds every row with no `sent_at` through `unsentNotifications` and retries those sends. A row whose send threw stays unsent and is retried the same way next cycle. A retry is a duplicate message at worst, never a lost one. `keyNotifiedSince` counts unsent rows too, so a crash cannot make the same key send twice as two separate rows.
 
 ## No pruning
 

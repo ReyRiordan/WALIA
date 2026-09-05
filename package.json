@@ -2,7 +2,7 @@
   "name": "walia",
   "version": "0.1.0",
   "private": true,
-  "description": "Polls LinkedIn guest job search for internships and posts a digest to Telegram",
+  "description": "Polls LinkedIn guest job search for internships and posts each new match to Telegram",
   "type": "module",
   "engines": {
     "node": ">=24"
@@ -16,10 +16,13 @@
     "test": "vitest run",
     "lint": "biome check .",
     "format": "biome format --write .",
-    "scrape": "f() { node --env-file-if-exists=.env scripts/scrape.ts \"$@\" | pino-pretty; }; f"
+    "scrape": "f() { node --env-file-if-exists=.env scripts/scrape.ts \"$@\" | pino-pretty; }; f",
+    "notify:test": "node --env-file-if-exists=.env scripts/notify.ts | pino-pretty"
   },
   "dependencies": {
+    "@grammyjs/auto-retry": "^2.0.2",
     "cheerio": "^1.2.0",
+    "grammy": "^1.46.0",
     "pino": "^10.3.1",
     "undici": "^8.10.2",
     "zod": "^4.5.4"

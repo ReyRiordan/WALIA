@@ -6,12 +6,12 @@ Two inputs, both validated with zod before anything else runs. Any failure logs 
 
 ## config.json
 
-Pure JSON, no env interpolation. `CONFIG_PATH` selects an alternate file, so a dev run can point at a config with a private test group. `searches` and `classifier.model` are required; the rest default.
+Pure JSON, no env interpolation. `CONFIG_PATH` selects an alternate file for dev runs, such as one with fewer searches. The Telegram chat ids are env, not config, so a private test group is a matter of `.env`. `searches` and `classifier.model` are required; the rest default.
 
 | Field | Default | Notes |
 | --- | --- | --- |
 | `searches[].url` | required | A LinkedIn job search URL pasted from the browser. Parsed as below. |
-| `searches[].label` | keywords string | Shown in logs and digests. |
+| `searches[].label` | keywords string | Shown in logs. |
 | `pollIntervalSec` | 300 | Floor of 60. |
 | `recencySec` | 3600 | Steady-state `f_TPR` window. |
 | `firstCycleRecencySec` | 600 | `f_TPR` window on the first cycle after boot. |
