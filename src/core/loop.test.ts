@@ -464,7 +464,7 @@ describe("Loop.runCycle", () => {
     await h2.loop.runCycle();
     expect(h2.admin).toEqual([expect.stringMatching(/^\[classifier_down\] 3 consecutive.*502/)]);
     expect(h2.sent).toHaveLength(FIXTURE_KEYS);
-    expect(h2.sent.every((n) => n.tags.includes("eligibility unclear"))).toBe(true);
+    expect(h2.sent.every((n) => n.tags.some((t) => t.text === "eligibility unclear"))).toBe(true);
   });
 
   it("a thrown store error yields cycle_failed and the next run still works", async () => {

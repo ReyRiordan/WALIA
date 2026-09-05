@@ -1,3 +1,9 @@
+/** One levelled tag. `warn` is reserved for the tag that rules most of the group out. */
+export interface Tag {
+  text: string;
+  level: "info" | "warn";
+}
+
 /** One message: a dedupe key with every city it was posted in, plus pre-worded tags. */
 export interface Notification {
   /** Dedupe key, for logging only. */
@@ -6,8 +12,8 @@ export interface Notification {
   company: string;
   /** First-appearance order, deduped by location. */
   postings: { location: string; url: string }[];
-  /** Pre-worded, may be empty. Adapters print them, they do not interpret them. */
-  tags: string[];
+  /** Pre-worded and levelled, may be empty. Adapters print them, they do not interpret them. */
+  tags: Tag[];
 }
 
 /** Delivery interface. Telegram is the first adapter. */

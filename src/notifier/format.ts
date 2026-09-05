@@ -1,6 +1,6 @@
 import type { Verdict } from "../classifier/types.ts";
 import type { Group } from "../core/dedupe.ts";
-import type { Notification } from "./types.ts";
+import type { Notification, Tag } from "./types.ts";
 
 const HTML_ESCAPES: Record<string, string> = {
   "&": "&amp;",
@@ -14,13 +14,13 @@ export function escapeHtml(s: string): string {
   return s.replace(/[&<>"]/g, (c) => HTML_ESCAPES[c] ?? c);
 }
 
-/** Tags for a verdict. Wording is decided here, once; adapters print the strings. */
-function tagsFor(verdict: Verdict | null): string[] {
+/** Tags for a verdict. Wording and level are decided here, once; adapters print them. */
+function tagsFor(verdict: Verdict | null): Tag[] {
   if (!verdict) return [];
-  const tags: string[] = [];
-  if (verdict.degreeOk === "unclear") tags.push("eligibility unclear");
-  if (verdict.workAuth === "no_sponsorship") tags.push("no sponsorship");
-  if (verdict.workAuth === "citizen_only") tags.push("US citizens only");
+  const tags: Tag[] = [];
+  if (verdict.degreeOk === "unclear") tags.push({ text: "eligibility unclear", level: "info" });
+  if (verdict.workAuth === "no_sponsorship") tags.push({ text: "no sponsorship", level: "info" });
+  if (verdict.workAuth === "citizen_only") tags.push({ text: "US citizens only", level: "warn" });
   return tags;
 }
 
@@ -45,15 +45,18 @@ export function toNotification(group: Group, verdict: Verdict | null): Notificat
   };
 }
 
-/** Telegram HTML: bold title, company, one linked location per posting, optional tag line. */
+/** Telegram HTML: bold title, italic company, one linked location per posting, optional tag line. */
 export function formatNotification(n: Notification): string {
   const lines = [
     `<b>${escapeHtml(n.title)}</b>`,
-    escapeHtml(n.company),
+    `<i>${escapeHtml(n.company)}</i>`,
     n.postings
       .map((p) => `<a href="${escapeHtml(p.url)}">${escapeHtml(p.location)}</a>`)
       .join(" · "),
   ];
-  if (n.tags.length > 0) lines.push(`⚠️ ${n.tags.join(" · ")}`);
+  if (n.tags.length > 0) {
+    const glyph = n.tags.some((t) => t.level === "warn") ? "⚠️" : "ℹ️";
+    lines.push(`${glyph} ${n.tags.map((t) => t.text).join(" · ")}`);
+  }
   return lines.join("\n");
 }

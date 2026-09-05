@@ -23,4 +23,4 @@ export {
   TelegramNotifier,
   type TelegramNotifierOptions,
 } from "./telegram.ts";
-export type { Notification, Notifier } from "./types.ts";
+export type { Notification, Notifier, Tag } from "./types.ts";

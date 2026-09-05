@@ -10,12 +10,12 @@ grammY's `Api` class, used for sends only. There is no `Bot` and no long polling
 
 ```
 <b>Software Engineer Intern</b>
-Spectrum
+<i>Spectrum</i>
 <a href="https://www.linkedin.com/jobs/view/111">Greenwood Village, CO</a> · <a href="https://www.linkedin.com/jobs/view/222">Englewood, CO</a>
-⚠️ eligibility unclear · no sponsorship
+ℹ️ eligibility unclear · no sponsorship
 ```
 
-Each location links to its own posting, so a student taps the listing for their city. The tag line is omitted when there are no tags. No posted time: the window is one hour and Telegram timestamps the message. No search label: a posting can match several searches and the label is already in the logs.
+Each location links to its own posting, so a student taps the listing for their city. The italic company reads as a subtitle under the bold title, which leaves the title as the one visual anchor. The tag line is omitted when there are no tags. It carries one glyph for the whole line, `⚠️` if any tag is `warn` and `ℹ️` otherwise, so `US citizens only` is the only tag that turns the line into a warning. No posted time: the window is one hour and Telegram timestamps the message. No search label: a posting can match several searches and the label is already in the logs.
 
 Title, company, location, and the `href` value all pass through `escapeHtml`, which replaces `&`, `<`, `>`, and `"`. URLs are LinkedIn's own.
 
