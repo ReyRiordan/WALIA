@@ -11,7 +11,7 @@ Pure JSON, no env interpolation. `CONFIG_PATH` selects an alternate file, so a d
 | Field | Default | Notes |
 | --- | --- | --- |
 | `searches[].url` | required | A LinkedIn job search URL pasted from the browser. Parsed as below. |
-| `searches[].label` | keywords string | Shown in logs and digests. |
+| `searches[].label` | keywords string | Shown in logs. |
 | `pollIntervalSec` | 300 | Floor of 60. |
 | `recencySec` | 3600 | Steady-state `f_TPR` window. |
 | `firstCycleRecencySec` | 600 | `f_TPR` window on the first cycle after boot. |

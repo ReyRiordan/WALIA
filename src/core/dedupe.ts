@@ -1,6 +1,6 @@
 import type { Job } from "../scraper/types.ts";
 
-/** One digest line: every job in a cycle that shares a dedupe key. */
+/** One message: every job in a cycle that shares a dedupe key. */
 export interface Group {
   key: string;
   title: string;

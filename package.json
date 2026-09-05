@@ -2,7 +2,7 @@
   "name": "walia",
   "version": "0.1.0",
   "private": true,
-  "description": "Polls LinkedIn guest job search for internships and posts a digest to Telegram",
+  "description": "Polls LinkedIn guest job search for internships and posts each new match to Telegram",
   "type": "module",
   "engines": {
     "node": ">=24"
