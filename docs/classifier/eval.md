@@ -11,12 +11,12 @@ Code: `scripts/eval.ts`, the `--save-eval` flag in `scripts/scrape.ts`. Files li
   "company": "PayPal",
   "url": "https://www.linkedin.com/jobs/view/4463646787",
   "description": "...",
-  "expected": { "degreeOk": "yes", "workAuth": "no_sponsorship" },
+  "expected": { "relevant": "yes", "degreeOk": "yes", "workAuth": "no_sponsorship" },
   "note": "why the label is what it is, quoting the posting"
 }
 ```
 
-`expected` fields are null until someone labels them. A file with either field null is unlabelled: counted, skipped. Labels follow the rubric in prompt.md, quoting the deciding phrase in `note`.
+`expected` fields are null until someone labels them. A file with any field null is unlabelled: counted, skipped. Labels follow the rubric in prompt.md, quoting the deciding phrase in `note`.
 
 ## Capturing postings
 
@@ -36,10 +36,10 @@ Runs every labelled file sequentially against real OpenRouter with the configure
 
 ## Pass bar
 
-Exit 1 on any false `no` for `degreeOk` (label `yes` or `unclear`, actual `no`) or any non-null `error`. Everything else is reported, not gating. An `unclear` where the label is decisive is a mismatch to look at, not a failure, because failing on it would push the prompt toward `no`, and a suppressed eligible posting is the one outcome the students never see.
+Exit 1 on any false `no` for `relevant` or `degreeOk` (label `yes` or `unclear`, actual `no`) or any non-null `error`. A suppressed good internship is the same failure as a suppressed eligible one. Everything else is reported, not gating. An `unclear` where the label is decisive is a mismatch to look at, not a failure, because failing on it would push the prompt toward `no`, and a suppressed eligible posting is the one outcome the students never see.
 
 An `error` is almost always OpenRouter or a provider, not the prompt. Read the cause: `http 502` or `http 429` on some calls and clean answers on the rest means a provider route is down. Re-run later rather than changing code.
 
 ## When to re-run
 
-After any change to `systemPrompt`, `VERDICT_JSON_SCHEMA`, `MAX_TOKENS`, `classifier.model`, or `classifier.reasoningEffort`. Add and label a posting whenever a real notification was wrong, so the set grows from mistakes.
+After any change to `systemPrompt`, `VERDICT_JSON_SCHEMA`, `MAX_TOKENS`, `classifier.model`, or `classifier.reasoningEffort`. The model is not deterministic even at temperature 0, so a borderline degree posting can flip between runs; run twice before blaming a change. Add and label a posting whenever a real notification was wrong, so the set grows from mistakes.

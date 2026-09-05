@@ -7,7 +7,7 @@ WALIA polls LinkedIn's public (logged-out) job search for new internship posting
 Source lives in src/, one directory per component (`src/core`, `src/scraper`, `src/classifier`, `src/notifier`, `src/ops`), with `src/config.ts`, `src/log.ts`, and `src/index.ts` at the top. Unit tests are colocated as `src/**/*.test.ts`; captured LinkedIn responses go in test/fixtures/ and are read through test/helpers/fixture.ts. Documentation lives in docs/, split by component:
 
 - docs/scraper/ - LinkedIn fetching and parsing
-- docs/classifier/ - LLM eligibility check via OpenRouter
+- docs/classifier/ - LLM relevance and eligibility check via OpenRouter
 - docs/notifier/ - Telegram delivery, message formatting, admin alerts
 - docs/core/ - polling loop, store, dedupe, config
 - docs/operations/ - running, deploying to Railway, alerting
@@ -48,7 +48,7 @@ Use the GitHub CLI (`gh`) for all GitHub-related tasks. Work is tracked as GitHu
 - **stale**: `skip` reason for a job whose detail timestamp is older than `recencySec`. Stored as seen, never sent.
 - **gone**: `skip` reason for a job whose detail fetch returned 404 or 410. Stored as seen, never sent.
 - **deferred**: an unseen id that got no detail fetch because the cycle budget ran out. Counted, not queued; it is found again next cycle.
-- **soft filter**: classifier verdict `degree_ok = no` suppresses a job; `unclear` sends it with a tag; missing description sends it untagged.
-- **verdict**: the classifier's answer for one group: `degreeOk`, `workAuth`, and a one-sentence `reason`. `null` on a row means never classified; `unclear` means the model could not tell or the call failed.
+- **soft filter**: classifier verdict `relevant = no` or `degree_ok = no` suppresses a job; `degree_ok = unclear` sends it with a tag, `relevant = unclear` sends it untagged; missing description sends it untagged.
+- **verdict**: the classifier's answer for one group: `relevant`, `degreeOk`, `workAuth`, and a one-sentence `reason`. `null` on a row means never classified; `unclear` means the model could not tell or the call failed.
 - **cycle_failed**: alert condition for a throw caught at the cycle boundary. The loop keeps running; `/health` reports `stale` until a cycle succeeds.
 - **notifier**: the delivery interface (start, isReady, send, sendAdmin, stop). Telegram is the first adapter.
