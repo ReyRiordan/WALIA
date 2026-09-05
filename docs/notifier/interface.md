@@ -23,7 +23,7 @@ toNotification(group: Group, verdict: Verdict | null): Notification
 createNotifier(config: Config, env: Env): Notifier
 ```
 
-There is no digest. Each dedupe key is one `Notification`, one message, and one `notifications` row. The loop sends groups oldest first so the newest posting is the last message in the chat.
+There is no digest. Each dedupe key is one `Notification`, one message, and one `notifications` row. Send order is the loop's business; see docs/core/loop.md.
 
 ## Notification
 
