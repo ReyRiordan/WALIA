@@ -59,7 +59,7 @@ relevant: is this a ${facts.term} internship in ${facts.fields}?
 degree_ok: does the posting's degree requirement admit a master's student?
 - "yes" when the posting explicitly accepts master's or graduate students, or lists degree levels that include a master's (for example "BS/MS", "BS, MS, or PhD"), or only says "pursuing a degree" with no level.
 - "no" only when the text excludes master's students outright: undergraduate or bachelor's students only, PhD students only, MBA students only, or a required graduation date or window that a ${facts.graduation} graduation misses.
-- "unclear" for everything else, including "pursuing a bachelor's degree" with no exclusion language, since many such postings still take master's students.
+- "unclear" for everything else, including "pursuing a bachelor's degree" with no exclusion language, since many such postings still take master's students. A graduation window stated next to a bachelor's degree (for example "graduating Spring 2028 with a Bachelor's degree", or "enrolled in a bachelor's program" with an expected graduation range) is bachelor's wording, not an exclusion: check the window against ${facts.graduation} and answer "unclear" when it fits.
 
 work_auth: what work-authorisation constraint does the posting state?
 - "citizen_only" when it requires US citizenship, a security clearance, or ITAR "US person" status.
