@@ -1,5 +1,13 @@
+import { join } from "node:path";
+import { createClassifier } from "./classifier/index.ts";
 import { type Config, ConfigError, type Env, loadConfig, parseEnv } from "./config.ts";
+import { Loop, openStore } from "./core/index.ts";
 import { log } from "./log.ts";
+import { Alerter, createNotifier } from "./notifier/index.ts";
+import { startHealthServer } from "./ops/health.ts";
+import { LinkedInClient } from "./scraper/index.ts";
+
+const SHUTDOWN_DEADLINE_MS = 10_000;
 
 function boot(): { env: Env; config: Config } {
   try {
@@ -29,7 +37,45 @@ log.info(
     notifier: config.notifier,
     dataDir: env.DATA_DIR,
     port: env.PORT,
+    proxy: env.PROXY_URL !== undefined,
   },
   "config loaded",
 );
-process.exit(0);
+
+const store = openStore(join(env.DATA_DIR, "walia.db"));
+const client = new LinkedInClient({ proxyUrl: env.PROXY_URL });
+const classifier = createClassifier(config, env);
+const notifier = createNotifier(config, env);
+try {
+  await notifier.start();
+} catch (err) {
+  log.error({ err }, "notifier failed to start");
+  process.exit(1);
+}
+const alerter = new Alerter(notifier);
+const loop = new Loop({ config, store, client, notifier, classifier, alerter });
+const health = await startHealthServer(env.PORT, () => loop.status());
+
+let stopping = false;
+async function shutdown(signal: NodeJS.Signals): Promise<void> {
+  if (stopping) {
+    log.warn({ signal }, "second signal, exiting now");
+    process.exit(1);
+  }
+  stopping = true;
+  log.info({ signal, deadlineMs: SHUTDOWN_DEADLINE_MS }, "shutting down");
+  setTimeout(() => {
+    log.error("shutdown deadline passed, forcing exit");
+    process.exit(1);
+  }, SHUTDOWN_DEADLINE_MS).unref();
+  await loop.stop();
+  await health.close();
+  await notifier.stop();
+  store.close();
+  log.info("stopped");
+  process.exit(0);
+}
+process.on("SIGTERM", (signal) => void shutdown(signal));
+process.on("SIGINT", (signal) => void shutdown(signal));
+
+loop.start();

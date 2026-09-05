@@ -1,10 +1,12 @@
 # operations
 
-Running locally, deploying to Railway, the health endpoint, and admin alerting.
+Running locally, deploying to Railway, and the health endpoint. Admin alerting is in docs/notifier/alerts.md; the counters behind it are in docs/core/loop.md.
 
 ## Docs
 
-No docs yet. As they are added, list each one here with a one-line purpose.
+- [run.md](run.md) - `.env` for a dev run, `pnpm dev` and the `--watch` caveat, the shutdown path, what each log line means.
+- [deploy.md](deploy.md) - `railway.json` fields, the volume, every dashboard variable, redeploy and restart behaviour, pausing.
+- [health.md](health.md) - `/health` fields, the status rules, why it is always 200.
 
 ## Network placement
 

@@ -30,7 +30,7 @@ pnpm 10 (`npm i -g pnpm`, then `pnpm install`).
 - `pnpm eval:classifier` runs the labelled files in test/eval/eligibility/ through the classifier against real OpenRouter and exits 1 on any false `no` or call error. Costs money; not in CI. See docs/classifier/eval.md.
 - `pnpm test` runs vitest once. `pnpm lint` runs Biome check. `pnpm format` writes Biome formatting. `pnpm typecheck` runs tsc over src and test.
 - `pnpm build` emits dist/ from tsconfig.build.json (tests excluded). `pnpm start` runs dist/index.js.
-- `docker build -t walia .` then `docker run --env-file .env walia` mirrors the Railway deploy.
+- `docker build -t walia .` then `docker run --env-file .env walia` mirrors the Railway deploy. `railway.json` holds the builder, healthcheck, and restart policy; the rest is dashboard config listed in docs/operations/deploy.md.
 
 CI (`.github/workflows/ci.yml`) runs lint, typecheck, test, and a Docker build on every push and pull request. No git hooks.
 
@@ -50,4 +50,5 @@ Use the GitHub CLI (`gh`) for all GitHub-related tasks. Work is tracked as GitHu
 - **deferred**: an unseen id that got no detail fetch because the cycle budget ran out. Counted, not queued; it is found again next cycle.
 - **soft filter**: classifier verdict `degree_ok = no` suppresses a job; `unclear` sends it with a tag; missing description sends it untagged.
 - **verdict**: the classifier's answer for one group: `degreeOk`, `workAuth`, and a one-sentence `reason`. `null` on a row means never classified; `unclear` means the model could not tell or the call failed.
+- **cycle_failed**: alert condition for a throw caught at the cycle boundary. The loop keeps running; `/health` reports `stale` until a cycle succeeds.
 - **notifier**: the delivery interface (start, isReady, send, sendAdmin, stop). Telegram is the first adapter.

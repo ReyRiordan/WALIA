@@ -4,14 +4,16 @@ import type { Notifier } from "./types.ts";
 
 /**
  * Conditions the loop detects. `rate_limited` and `blocked` match the scraper's error
- * signals so `halted.signal` maps straight through.
+ * signals so `halted.signal` maps straight through. `cycle_failed` is a throw caught at the
+ * cycle boundary.
  */
 export type AlertCondition =
   | "rate_limited"
   | "blocked"
   | "no_cards"
   | "send_failed"
-  | "classifier_down";
+  | "classifier_down"
+  | "cycle_failed";
 
 export const ALERT_INTERVAL_MS = 60 * 60 * 1000;
 
