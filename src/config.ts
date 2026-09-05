@@ -68,7 +68,13 @@ export const ConfigSchema = z
     recencySec: positiveInt.default(3600),
     firstCycleRecencySec: positiveInt.default(600),
     maxPages: positiveInt.default(5),
-    classifier: z.object({ model: z.string().min(1) }),
+    classifier: z.object({
+      model: z.string().min(1),
+      /** Who the students are, in prose. Goes into the prompt verbatim. */
+      program: z.string().min(1),
+      /** Expected graduation, e.g. "May 2028". Goes into the prompt verbatim. */
+      graduation: z.string().min(1),
+    }),
     dedupe: z.object({ windowDays: positiveInt.default(14) }).default({ windowDays: 14 }),
     notifier: z.enum(["telegram"]).default("telegram"),
   })
