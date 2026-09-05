@@ -20,7 +20,7 @@ One service from the GitHub repo, `main` branch, auto-deploy on push. The Docker
 
 One volume mounted at `/data`, with `DATA_DIR=/data` so `walia.db` lands on it. The store is the only state; without the volume every redeploy re-sends every posting in the window.
 
-Railway may mount the volume owned by root while the container runs as `node`, in which case the store open fails with `EACCES` on the first boot. Check the deploy log for that. The fix is either `RAILWAY_RUN_UID=0` in the service variables, which runs the container as root, or a `chown` of the mount point. Record which one was needed here once known.
+Railway mounts the volume owned by root while the Dockerfile switches to the `node` user, so without further setup the first boot crash-loops on `ERR_SQLITE_ERROR` errcode 14, `unable to open database file`, right after the `config loaded` line. `RAILWAY_RUN_UID=0` in the service variables runs the container as root and is the fix in use.
 
 ## Variables
 
@@ -31,6 +31,7 @@ Railway may mount the volume owned by root while the container runs as `node`, i
 | `TELEGRAM_ADMIN_CHAT_ID` | The admin's chat with the bot. |
 | `OPENROUTER_API_KEY` | Secret. Put a monthly limit on the key; that is the spend cap. |
 | `DATA_DIR` | `/data`. |
+| `RAILWAY_RUN_UID` | `0`. Runs the container as root so the volume is writable; see Volume above. |
 | `PORT` | Set by Railway. Do not override. |
 | `RAILWAY_DEPLOYMENT_DRAINING_SECONDS` | 30. Must exceed the 10 s shutdown deadline in `src/index.ts`, or Railway SIGKILLs before the cycle reaches a step boundary. |
 | `LOG_LEVEL`, `CONFIG_PATH`, `PROXY_URL` | Optional. `PROXY_URL` only if the instance keeps landing in backoff; see README.md. |
