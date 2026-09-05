@@ -4,7 +4,7 @@ WALIA polls LinkedIn's public (logged-out) job search for new internship posting
 
 ## Codebase
 
-No source tree exists yet. All documentation lives in docs/, split by component:
+Source lives in src/, one directory per component (`src/core`, `src/scraper`, `src/classifier`, `src/notifier`, `src/ops`), with `src/config.ts`, `src/log.ts`, and `src/index.ts` at the top. Unit tests are colocated as `src/**/*.test.ts`; captured LinkedIn responses go in test/fixtures/ and are read through test/helpers/fixture.ts. Documentation lives in docs/, split by component:
 
 - docs/scraper/ - LinkedIn fetching and parsing
 - docs/classifier/ - LLM eligibility check via OpenRouter
@@ -12,7 +12,7 @@ No source tree exists yet. All documentation lives in docs/, split by component:
 - docs/core/ - polling loop, store, dedupe, config
 - docs/operations/ - running, deploying to Railway, alerting
 
-Planned stack: single TypeScript process on Node 22, SQLite via better-sqlite3, grammY for Telegram, OpenRouter for the classifier, hosted on Railway with one volume. `linkedin-guest-scraper-handoff.md` is the reference for LinkedIn endpoints, parsing targets, and throttling until docs/scraper/ replaces it.
+Stack: single TypeScript process on Node 24 run directly with Node's type stripping (no tsx, no enums, no namespaces, no parameter properties; relative imports use `.ts` specifiers), SQLite via the built-in `node:sqlite`, grammY for Telegram, OpenRouter for the classifier, zod for validation, pino for logging, hosted on Railway with one volume. `linkedin-guest-scraper-handoff.md` is the reference for LinkedIn endpoints, parsing targets, and throttling until docs/scraper/ replaces it.
 
 ## Exploration Workflow
 
@@ -22,7 +22,14 @@ Keep the docs current. Do not end a session with changes and stale docs. Docs de
 
 ## Commands
 
-No code yet. Planned tooling is pnpm, tsx for dev, tsc for build, vitest for tests, Biome for lint and format. Fill in the exact commands when the scaffold lands.
+pnpm 10 (`npm i -g pnpm`, then `pnpm install`).
+
+- `pnpm dev` runs `src/index.ts` under `node --watch` with `.env` loaded if present, piped through pino-pretty. Set `CONFIG_PATH` to point at a config with a private test group.
+- `pnpm test` runs vitest once. `pnpm lint` runs Biome check. `pnpm format` writes Biome formatting. `pnpm typecheck` runs tsc over src and test.
+- `pnpm build` emits dist/ from tsconfig.build.json (tests excluded). `pnpm start` runs dist/index.js.
+- `docker build -t walia .` then `docker run --env-file .env walia` mirrors the Railway deploy.
+
+CI (`.github/workflows/ci.yml`) runs lint, typecheck, test, and a Docker build on every push and pull request. No git hooks.
 
 Use the GitHub CLI (`gh`) for all GitHub-related tasks. Work is tracked as GitHub issues, one per component, each grilled into a ticket before implementation.
 

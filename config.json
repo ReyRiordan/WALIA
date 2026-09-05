@@ -1,0 +1,15 @@
+{
+  "searches": [
+    {
+      "url": "https://www.linkedin.com/jobs/search/?keywords=%22summer%202027%22%20(SWE%20OR%20%22software%20engineer%22%20OR%20%22machine%20learning%22%20OR%20AI)%20intern&geoId=103644278&sortBy=DD",
+      "label": "SWE/ML intern US"
+    }
+  ],
+  "pollIntervalSec": 300,
+  "recencySec": 3600,
+  "firstCycleRecencySec": 600,
+  "maxPages": 5,
+  "classifier": { "model": "openai/gpt-4o-mini" },
+  "dedupe": { "windowDays": 14 },
+  "notifier": "telegram"
+}
