@@ -15,9 +15,11 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "lint": "biome check .",
-    "format": "biome format --write ."
+    "format": "biome format --write .",
+    "scrape": "f() { node --env-file-if-exists=.env scripts/scrape.ts \"$@\" | pino-pretty; }; f"
   },
   "dependencies": {
+    "cheerio": "^1.2.0",
     "pino": "^10.3.1",
     "undici": "^8.10.2",
     "zod": "^4.5.4"

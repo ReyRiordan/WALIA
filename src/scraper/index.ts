@@ -1,5 +1,16 @@
 export { type BackoffState, BLOCK_PAUSE_MS, RATE_LIMIT_LADDER_MS, type Signal } from "./backoff.ts";
 export {
+  type DetailFields,
+  type FetchDetailOpts,
+  fetchDetail,
+  htmlToText,
+  JOB_FRAGMENT_URL,
+  JOB_VIEW_URL,
+  parseDetailFragment,
+  parseJobPostingJsonLd,
+  parseRelativeTime,
+} from "./detail.ts";
+export {
   BlockedError,
   BudgetExhaustedError,
   type ErrorSignal,
@@ -20,4 +31,12 @@ export {
   TRANSIENT_RETRY_DELAY_MS,
   USER_AGENT,
 } from "./http.ts";
+export {
+  buildSearchUrl,
+  PAGE_SIZE,
+  parseCards,
+  type ScrapeOpts,
+  SEARCH_URL,
+  scrapeSearch,
+} from "./search.ts";
 export type { Card, Job, ScrapeResult } from "./types.ts";
