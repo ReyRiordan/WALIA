@@ -1,6 +1,6 @@
 # core
 
-The polling loop, the persistent store of seen postings, and configuration.
+The polling loop, the SQLite store of seen postings and sent notifications, the dedupe key and grouping logic, and configuration.
 
 ## Docs
 

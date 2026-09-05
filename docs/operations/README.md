@@ -1,6 +1,6 @@
 # operations
 
-Running, deploying, and monitoring the bot.
+Running locally, deploying to Railway, the health endpoint, and admin alerting.
 
 ## Docs
 

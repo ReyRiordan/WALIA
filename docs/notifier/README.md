@@ -1,6 +1,6 @@
 # notifier
 
-Delivering new postings to the WhatsApp group.
+Delivering the per-cycle digest to the student group and alerts to the admin. A `Notifier` interface with Telegram as the first adapter.
 
 ## Docs
 
