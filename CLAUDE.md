@@ -24,7 +24,7 @@ Keep the docs current. Do not end a session with changes and stale docs. Docs de
 
 pnpm 10 (`npm i -g pnpm`, then `pnpm install`).
 
-- `pnpm dev` runs `src/index.ts` under `node --watch` with `.env` loaded if present, piped through pino-pretty. Set `CONFIG_PATH` to point at a config with a private test group.
+- `pnpm dev` runs `src/index.ts` under `node --watch` with `.env` loaded if present, piped through pino-pretty. Point `TELEGRAM_GROUP_CHAT_ID` in `.env` at a private test group first; `CONFIG_PATH` selects an alternate config.json.
 - `pnpm scrape [--search <label>] [--pages <n>] [--recency <sec>] [--save-fixtures]` runs one real search against LinkedIn and prints every request and job. With `--save-fixtures` it refreshes test/fixtures/. See docs/scraper/fixtures.md.
 - `pnpm notify:test` sends one sample notification to the group and one line to the admin chat over real Telegram. Point `TELEGRAM_GROUP_CHAT_ID` at a private test group first.
 - `pnpm test` runs vitest once. `pnpm lint` runs Biome check. `pnpm format` writes Biome formatting. `pnpm typecheck` runs tsc over src and test.

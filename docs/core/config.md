@@ -6,7 +6,7 @@ Two inputs, both validated with zod before anything else runs. Any failure logs 
 
 ## config.json
 
-Pure JSON, no env interpolation. `CONFIG_PATH` selects an alternate file, so a dev run can point at a config with a private test group. `searches` and `classifier.model` are required; the rest default.
+Pure JSON, no env interpolation. `CONFIG_PATH` selects an alternate file for dev runs, such as one with fewer searches. The Telegram chat ids are env, not config, so a private test group is a matter of `.env`. `searches` and `classifier.model` are required; the rest default.
 
 | Field | Default | Notes |
 | --- | --- | --- |
