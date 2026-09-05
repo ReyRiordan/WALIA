@@ -1,4 +1,5 @@
 import type { Logger } from "pino";
+import type { ReasoningEffort } from "../config.ts";
 import { log as rootLog } from "../log.ts";
 import { buildMessages, parseVerdict, VERDICT_JSON_SCHEMA } from "./prompt.ts";
 import type { Classifier, ClassifyInput, ClassifyResult, Verdict } from "./types.ts";
@@ -6,7 +7,8 @@ import type { Classifier, ClassifyInput, ClassifyResult, Verdict } from "./types
 export const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 export const REQUEST_TIMEOUT_MS = 30_000;
 export const RETRY_DELAY_MS = 2_000;
-export const MAX_TOKENS = 300;
+/** Output cap. The model reasons before answering and those tokens count, so this is well above the ~60-token answer. */
+export const MAX_TOKENS = 1_500;
 
 /** The parts of a fetch Response the client reads. Tests build these directly. */
 export type FetchResponse = Pick<Response, "status" | "text">;
@@ -17,6 +19,8 @@ export interface OpenRouterClassifierOptions {
   model: string;
   program: string;
   graduation: string;
+  /** OpenRouter `reasoning.effort`. Omitted from the request when undefined. */
+  reasoningEffort?: ReasoningEffort;
   fetch?: Fetch;
   sleep?: (ms: number) => Promise<void>;
   /** Epoch ms. */
@@ -47,6 +51,7 @@ export class OpenRouterClassifier implements Classifier {
   private readonly apiKey: string;
   private readonly model: string;
   private readonly facts: { program: string; graduation: string };
+  private readonly reasoningEffort: ReasoningEffort | undefined;
   private readonly fetch: Fetch;
   private readonly sleep: (ms: number) => Promise<void>;
   private readonly now: () => number;
@@ -56,6 +61,7 @@ export class OpenRouterClassifier implements Classifier {
     this.apiKey = opts.apiKey;
     this.model = opts.model;
     this.facts = { program: opts.program, graduation: opts.graduation };
+    this.reasoningEffort = opts.reasoningEffort;
     this.fetch = opts.fetch ?? ((url, init) => globalThis.fetch(url, init));
     this.sleep = opts.sleep ?? defaultSleep;
     this.now = opts.now ?? Date.now;
@@ -95,7 +101,13 @@ export class OpenRouterClassifier implements Classifier {
 
   private async attempt(input: ClassifyInput, attempt: number): Promise<Attempt> {
     const started = this.now();
-    const base = { model: this.model, attempt, title: input.title, company: input.company };
+    const base = {
+      model: this.model,
+      reasoningEffort: this.reasoningEffort ?? null,
+      attempt,
+      title: input.title,
+      company: input.company,
+    };
     let res: FetchResponse;
     try {
       res = await this.fetch(OPENROUTER_URL, {
@@ -111,6 +123,7 @@ export class OpenRouterClassifier implements Classifier {
           temperature: 0,
           max_tokens: MAX_TOKENS,
           response_format: { type: "json_schema", json_schema: VERDICT_JSON_SCHEMA },
+          ...(this.reasoningEffort ? { reasoning: { effort: this.reasoningEffort } } : {}),
         }),
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });
@@ -131,18 +144,30 @@ export class OpenRouterClassifier implements Classifier {
     }
 
     const body = parseBody(await res.text());
-    const usage = body?.usage;
-    const tokens = {
-      promptTokens: usage?.prompt_tokens ?? null,
-      completionTokens: usage?.completion_tokens ?? null,
-    };
-    const content = body?.choices?.[0]?.message?.content;
     if (body === null) {
       this.log.info({ ...base, status, elapsedMs }, "openrouter request");
       return { ok: false, cause: "unparsable output", retry: false };
     }
+    // OpenRouter wraps upstream provider errors in a 200 body: { error: { code, message } }.
+    if (body.error) {
+      const code = typeof body.error.code === "number" ? body.error.code : status;
+      this.log.info(
+        { ...base, status, elapsedMs, upstream: code, message: body.error.message },
+        "openrouter request",
+      );
+      return { ok: false, cause: `http ${code}`, retry: code === 429 || code >= 500 };
+    }
+    const usage = body.usage;
+    const tokens = {
+      promptTokens: usage?.prompt_tokens ?? null,
+      completionTokens: usage?.completion_tokens ?? null,
+      reasoningTokens: usage?.completion_tokens_details?.reasoning_tokens ?? null,
+    };
+    const choice = body.choices?.[0];
+    const content = choice?.message?.content;
+    const finishReason = choice?.finish_reason ?? null;
     if (typeof content !== "string" || content.trim() === "") {
-      this.log.info({ ...base, status, elapsedMs, ...tokens }, "openrouter request");
+      this.log.info({ ...base, status, elapsedMs, ...tokens, finishReason }, "openrouter request");
       return { ok: false, cause: "empty response", retry: false };
     }
     const verdict = parseVerdict(content);
@@ -169,8 +194,13 @@ export class OpenRouterClassifier implements Classifier {
 }
 
 interface CompletionBody {
-  choices?: { message?: { content?: unknown } }[];
-  usage?: { prompt_tokens?: number; completion_tokens?: number };
+  choices?: { message?: { content?: unknown }; finish_reason?: string }[];
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    completion_tokens_details?: { reasoning_tokens?: number };
+  };
+  error?: { code?: unknown; message?: unknown };
 }
 
 function parseBody(text: string): CompletionBody | null {

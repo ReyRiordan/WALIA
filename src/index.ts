@@ -25,6 +25,7 @@ log.info(
     recencySec: config.recencySec,
     model: config.classifier.model,
     graduation: config.classifier.graduation,
+    reasoningEffort: config.classifier.reasoningEffort,
     notifier: config.notifier,
     dataDir: env.DATA_DIR,
     port: env.PORT,

@@ -110,6 +110,17 @@ describe("config defaults and bounds", () => {
     expect(graduation).toBeDefined();
   });
 
+  it("defaults classifier.reasoningEffort to low and rejects unknown values", () => {
+    expect(config(`${BASE}?keywords=x`).classifier.reasoningEffort).toBe("low");
+    expect(
+      config(`${BASE}?keywords=x`, { classifier: { ...CLASSIFIER, reasoningEffort: "none" } })
+        .classifier.reasoningEffort,
+    ).toBe("none");
+    expect(() =>
+      config(`${BASE}?keywords=x`, { classifier: { ...CLASSIFIER, reasoningEffort: "max" } }),
+    ).toThrow(/classifier\.reasoningEffort/);
+  });
+
   it("enforces the pollIntervalSec floor", () => {
     expect(() => config(`${BASE}?keywords=x`, { pollIntervalSec: 59 })).toThrow(/pollIntervalSec/);
     expect(config(`${BASE}?keywords=x`, { pollIntervalSec: 60 }).pollIntervalSec).toBe(60);

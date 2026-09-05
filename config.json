@@ -12,7 +12,8 @@
   "classifier": {
     "model": "openai/gpt-5.6-luna",
     "program": "master's students in Carnegie Mellon University's M.S. in Artificial Intelligence and Innovation (MSAII), a mix of US citizens and F-1 international students",
-    "graduation": "May 2028"
+    "graduation": "May 2028",
+    "reasoningEffort": "low"
   },
   "dedupe": { "windowDays": 14 },
   "notifier": "telegram"

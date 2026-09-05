@@ -46,6 +46,7 @@ function harness(replies: (FetchResponse | Error)[]) {
     model: "test/model",
     program: "test program",
     graduation: "May 2028",
+    reasoningEffort: "low",
     fetch,
     sleep,
     now: () => t,
@@ -90,10 +91,27 @@ describe("OpenRouterClassifier happy path", () => {
       type: "json_schema",
       json_schema: { name: expect.any(String), strict: true },
     });
+    expect(body.reasoning).toEqual({ effort: "low" });
     expect(body.messages).toHaveLength(2);
     expect(body.messages[0].role).toBe("system");
     expect(body.messages[0].content).toContain("test program");
     expect(body.messages[1].content).toContain("Pursuing a BS/MS.");
+  });
+
+  it("omits reasoning when no effort is configured", async () => {
+    const fetch = vi.fn<Fetch>(async () => response(200));
+    const classifier = new OpenRouterClassifier({
+      apiKey: "k",
+      model: "m",
+      program: "p",
+      graduation: "g",
+      fetch,
+      // biome-ignore lint/suspicious/noExplicitAny: partial pino logger
+      log: { info: vi.fn(), warn: vi.fn() } as any,
+    });
+    await classifier.classify(INPUT);
+    const body = JSON.parse(fetch.mock.calls[0]?.[1].body as string);
+    expect(body.reasoning).toBeUndefined();
   });
 
   it("logs model, status, elapsed, tokens, verdict, and attempt", async () => {
@@ -168,6 +186,31 @@ describe("OpenRouterClassifier retry", () => {
   it("carries the second attempt's cause when the two differ", async () => {
     const h = harness([response(502, ""), new TypeError("fetch failed")]);
     await expect(h.classifier.classify(INPUT)).resolves.toEqual(UNCLEAR("network"));
+  });
+});
+
+describe("OpenRouterClassifier error envelope", () => {
+  const envelope = (code: number) =>
+    JSON.stringify({ id: "gen-1", error: { message: "upstream failed", code } });
+
+  it("a 200 carrying a 502 error retries and then succeeds", async () => {
+    const h = harness([response(200, envelope(502)), response(200)]);
+    const { verdict, error } = await h.classifier.classify(INPUT);
+    expect(error).toBeNull();
+    expect(verdict.degreeOk).toBe("yes");
+    expect(h.sleeps).toEqual([RETRY_DELAY_MS]);
+    expect(h.log.info.mock.calls[0]?.[0]).toMatchObject({ status: 200, upstream: 502 });
+  });
+
+  it("a 200 carrying a 502 twice gives http 502", async () => {
+    const h = harness([response(200, envelope(502)), response(200, envelope(502))]);
+    await expect(h.classifier.classify(INPUT)).resolves.toEqual(UNCLEAR("http 502"));
+  });
+
+  it("a 200 carrying a 400 error makes one call", async () => {
+    const h = harness([response(200, envelope(400))]);
+    await expect(h.classifier.classify(INPUT)).resolves.toEqual(UNCLEAR("http 400"));
+    expect(h.fetch).toHaveBeenCalledTimes(1);
   });
 });
 

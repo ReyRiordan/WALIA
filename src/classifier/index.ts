@@ -13,6 +13,7 @@ export function createClassifier(
     model: config.classifier.model,
     program: config.classifier.program,
     graduation: config.classifier.graduation,
+    reasoningEffort: config.classifier.reasoningEffort,
     ...opts,
   });
 }

@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!pnpm-lock.yaml", "!test/fixtures"]
+    "includes": ["**", "!pnpm-lock.yaml", "!test/fixtures", "!test/eval"]
   },
   "formatter": {
     "enabled": true,
