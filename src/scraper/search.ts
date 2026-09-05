@@ -51,12 +51,16 @@ export function parseCards(html: string): Card[] {
   return cards;
 }
 
-/** True when the card's day-granular date is more than a day before the window start. */
+/**
+ * True when the card cannot be inside the window: its date is day-granular in an unknown
+ * timezone, so a card is dropped only when the end of its posted day plus a full day of
+ * margin is still before the window start.
+ */
 function beforeWindow(card: Card, windowStart: number): boolean {
   if (!card.postedOn) return false;
   const day = Date.parse(`${card.postedOn}T00:00:00Z`);
   if (Number.isNaN(day)) return false;
-  return day + DAY_MS < windowStart;
+  return day + 2 * DAY_MS < windowStart;
 }
 
 /**
@@ -64,7 +68,7 @@ function beforeWindow(card: Card, windowStart: number): boolean {
  * before the budget ran out or the client threw. Assumes `client.beginCycle()` has been called.
  */
 export async function scrapeSearch(
-  client: LinkedInClient,
+  client: Pick<LinkedInClient, "get">,
   search: Search,
   opts: ScrapeOpts,
 ): Promise<ScrapeResult> {
@@ -87,7 +91,6 @@ export async function scrapeSearch(
         await client.get(buildSearchUrl(search, opts.recencySec, page * PAGE_SIZE)),
       );
       if (page === 0) result.cardsOnFirstPage = cards.length;
-      if (cards.length === 0) break;
       let added = 0;
       for (const card of cards) {
         if (ids.has(card.id) || opts.isSeen(card.id) || beforeWindow(card, windowStart)) continue;
@@ -95,7 +98,8 @@ export async function scrapeSearch(
         unseen.push(card);
         added += 1;
       }
-      if (added === 0) break;
+      // A short page is the last one; a page with nothing new means nothing older is new either.
+      if (cards.length < PAGE_SIZE || added === 0) break;
     }
   } catch (err) {
     return halt(err, 0);

@@ -8,6 +8,7 @@ export {
   JOB_VIEW_URL,
   parseDetailFragment,
   parseJobPostingJsonLd,
+  parseRelativeTime,
 } from "./detail.ts";
 export {
   BlockedError,

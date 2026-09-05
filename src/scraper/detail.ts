@@ -22,12 +22,16 @@ export interface FetchDetailOpts {
   now(): number;
 }
 
-const BLOCK_TAGS = "br, p, li, div, h1, h2, h3, h4, h5, h6, tr";
+const BLOCK_TAGS = "p, div, ul, ol, h1, h2, h3, h4, h5, h6, tr";
 
-/** Strip markup to plain text, keeping paragraph and list boundaries as newlines. */
+/**
+ * Strip markup to plain text. Blocks are wrapped in newlines, so adjacent paragraphs leave a
+ * blank line between them; `br` and `li` end a line without one.
+ */
 export function htmlToText(html: string): string {
   const $ = cheerio.load(html, null, false);
   $("br").replaceWith("\n");
+  $("li").append("\n");
   $(BLOCK_TAGS).each((_, el) => {
     $(el).prepend("\n").append("\n");
   });
@@ -106,17 +110,42 @@ export function parseJobPostingJsonLd(html: string): DetailFields | null {
   };
 }
 
-/** Fields from the guest `jobPosting/{id}` fragment. Null when the description container is absent. */
-export function parseDetailFragment(html: string): DetailFields | null {
+const RELATIVE_UNITS_MS: Record<string, number> = {
+  second: 1_000,
+  minute: 60_000,
+  hour: 3_600_000,
+  day: 86_400_000,
+  week: 7 * 86_400_000,
+  month: 30 * 86_400_000,
+};
+
+/** "57 minutes ago" to milliseconds. Null when the text is not a relative time. */
+export function parseRelativeTime(label: string): number | null {
+  const cleaned = label.replace(/\s+/g, " ").trim().toLowerCase();
+  if (cleaned === "just now" || cleaned === "now") return 0;
+  const match = /^(\d+)\+? (second|minute|hour|day|week|month)s? ago$/.exec(cleaned);
+  if (!match) return null;
+  const unit = RELATIVE_UNITS_MS[match[2] ?? ""];
+  return unit === undefined ? null : Number(match[1]) * unit;
+}
+
+/**
+ * Fields from the top-card markup shared by the view page and the guest `jobPosting/{id}`
+ * fragment. Null when the description container is absent. `postedAt` comes from the relative
+ * "N minutes ago" label, resolved against `now`.
+ */
+export function parseDetailFragment(html: string, now: number = Date.now()): DetailFields | null {
   const $ = cheerio.load(html);
   const markup = $("div.show-more-less-html__markup").first();
   if (markup.length === 0) return null;
   const description = htmlToText(markup.html() ?? "");
+  const ago = parseRelativeTime($("span.posted-time-ago__text").first().text());
   return {
-    title: text($("h2.top-card-layout__title").first().text()),
+    title: text($("h1.top-card-layout__title, h2.top-card-layout__title").first().text()),
     company: text($("a.topcard__org-name-link").first().text()),
     location: text($("span.topcard__flavor--bullet").first().text()),
     description: description || null,
+    postedAt: ago === null ? undefined : new Date(now - ago),
   };
 }
 
@@ -141,26 +170,27 @@ function goneJob(card: Card, searchLabel: string): Job {
 }
 
 /**
- * Fetch the view page for a card and merge its JSON-LD (or the fragment fallback) over the
- * card fields. Never throws NotFoundError; other ScrapeErrors propagate.
+ * Fetch the view page for a card and merge its detail fields over the card fields. Sources in
+ * order: JSON-LD on the view page, top-card markup on the view page, then the guest fragment
+ * endpoint. Never throws NotFoundError; other ScrapeErrors propagate.
  */
 export async function fetchDetail(
-  client: LinkedInClient,
+  client: Pick<LinkedInClient, "get">,
   card: Card,
   opts: FetchDetailOpts,
 ): Promise<Job> {
   let fields: DetailFields | null;
   try {
-    fields = parseJobPostingJsonLd(await client.get(`${JOB_VIEW_URL}${card.id}`));
+    const view = await client.get(`${JOB_VIEW_URL}${card.id}`);
+    fields = parseJobPostingJsonLd(view) ?? parseDetailFragment(view, opts.now());
     if (fields === null) {
-      fields = parseDetailFragment(await client.get(`${JOB_FRAGMENT_URL}${card.id}`));
+      fields = parseDetailFragment(await client.get(`${JOB_FRAGMENT_URL}${card.id}`), opts.now());
     }
   } catch (err) {
     if (err instanceof NotFoundError) return goneJob(card, opts.searchLabel);
     throw err;
   }
   const detail = fields ?? {};
-  const postedAt = detail.postedAt ?? cardDate(card);
   const job: Job = {
     id: card.id,
     title: detail.title ?? card.title,
@@ -168,9 +198,12 @@ export async function fetchDetail(
     location: detail.location ?? card.location,
     description: detail.description ?? null,
     url: `${JOB_VIEW_URL}${card.id}`,
-    postedAt,
+    postedAt: detail.postedAt ?? cardDate(card),
     searchLabel: opts.searchLabel,
   };
-  if (postedAt && postedAt.getTime() < opts.now() - opts.recencySec * 1000) job.skip = "stale";
+  // Only a detail timestamp is precise enough to judge recency. The card date is day-granular
+  // and already served as the pre-filter, so a job with no detail time is sent, not skipped.
+  const posted = detail.postedAt?.getTime();
+  if (posted !== undefined && posted < opts.now() - opts.recencySec * 1000) job.skip = "stale";
   return job;
 }
