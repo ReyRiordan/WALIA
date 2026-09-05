@@ -4,31 +4,29 @@ description: Implement one ticket.
 disable-model-invocation: true
 ---
 
-Analyze and implement the Github issue: $ARGUMENTS
+Implement GitHub issue $ARGUMENTS and open a PR.
 
-Follow this workflow:
+# Plan
+1. `gh issue view` the ticket, then every issue or PR it links to.
+2. Follow the exploration workflow in CLAUDE.md for each component the ticket touches.
+3. The ticket is the plan. Do not redesign what it already decides.
+   If it contradicts the code or itself, and the readings lead to materially
+   different work, stop and ask. Otherwise pick one and note it in the PR.
+   If the ticket leaves the design open, decide, and record the decision in the PR.
 
-# PLAN
-1. Use 'gh issue view' to get issue details.
-2. Understand the problem described in the issue.
-3. Read any git issues or PRs relevant to the current issue.
-4. Use the workflow described in CLAUDE.md to explore the codebase and find the necessary context.
-5. Ask clarifying questions if necessary.
-5. Think hard about how to break the issue down into a series of small, manageable tasks.
+# Build
+- Branch from main as `<issue#>-<short-slug>`.
+- Work in small steps, one commit each. Tests for new behaviour in the same commit.
 
-# CREATE
-- Create a new branch for the issue (including issue # in the branch name).
-- Solve the issue in small, manageable steps, according to your plan.
-- Commit your changes after each step.
+# Verify
+Before every commit, run what CI runs:
+`pnpm lint && pnpm typecheck && pnpm test`. Fix failures, don't skip them.
+If the Dockerfile or dependencies changed, also `docker build -t walia .`.
 
-# TEST
-- Write unit and integration tests as needed to describe the expected behavior of your code.
-- Run the full test suite for the layer you worked on to ensure you haven't broken anything. Also run the linter(s).
-- If any tests are failing, fix them.
-- Ensure that ALL tests are passing before moving on to the next step.
+# Document
+Update docs/ per the rule in CLAUDE.md. Check CLAUDE.md's Commands and Glossary too.
 
-# DOCUMENT
-- Search for related documentation in ./docs/ and update them as needed for any changes you implemented. Remember that the docs are intended to be minimal and concise, aiding in efficient exploration and navigation to relevant code.
-
-# DEPLOY
-- Push the branch, open a PR targeting the branch you were on previously.
+# Hand off
+- Push, then `gh pr create` against main. Body: what changed, any decision made
+  or deviation from the ticket and why, `Closes #<issue>`.
+- Stop there. Do not merge.
