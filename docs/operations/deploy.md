@@ -6,7 +6,7 @@
 
 | Field | Value | Why |
 | --- | --- | --- |
-| `build.builder` | `DOCKERFILE` | The repo's Dockerfile, same image as `docker build -t walia .`. |
+| `build.builder` | `DOCKERFILE` | The repo's Dockerfile, same image as `docker build -t malja .`. |
 | `deploy.healthcheckPath` | `/health` | Always 200 once listening; see health.md. |
 | `deploy.healthcheckTimeout` | 120 | Seconds Railway waits for the first 200 before failing the deploy. Boot is a config parse, a store open, and one `getMe`; 120 leaves room for a slow pull. |
 | `deploy.restartPolicyType` | `ON_FAILURE` | Restart on a non-zero exit. A clean SIGTERM exit is 0 and is not restarted. |
@@ -18,7 +18,7 @@ One service from the GitHub repo, `main` branch, auto-deploy on push. The Docker
 
 ## Volume
 
-One volume mounted at `/data`, with `DATA_DIR=/data` so `walia.db` lands on it. The store is the only state; without the volume every redeploy re-sends every posting in the window.
+One volume mounted at `/data`, with `DATA_DIR=/data` so `malja.db` lands on it. The store is the only state; without the volume every redeploy re-sends every posting in the window.
 
 Railway mounts the volume owned by root while the Dockerfile switches to the `node` user, so without further setup the first boot crash-loops on `ERR_SQLITE_ERROR` errcode 14, `unable to open database file`, right after the `config loaded` line. `RAILWAY_RUN_UID=0` in the service variables runs the container as root and is the fix in use.
 

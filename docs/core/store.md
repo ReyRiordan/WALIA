@@ -21,7 +21,7 @@ interface StoredJob extends Job { firstSeenAt: number; verdict: Verdict | null }
 interface PendingNotification { id: number; key: string; createdAt: number; jobs: StoredJob[] }
 ```
 
-One SQLite file, `walia.db` under `DATA_DIR`. The caller passes the full path. The driver is Node 24's built-in `node:sqlite` (`DatabaseSync`): synchronous prepared statements, no native addon, nothing extra in the Docker image. Every statement is prepared once in the constructor. Transactions are explicit `BEGIN` / `COMMIT` / `ROLLBACK` behind one private helper, since the driver has no `transaction()`.
+One SQLite file, `malja.db` under `DATA_DIR`. The caller passes the full path. `renameLegacyStore(dir)` runs first at boot and renames a pre-rename `walia.db` and its `-wal`/`-shm` sidecars to `malja.db` when the new file does not exist yet; it can go once every deployment has booted on it. The driver is Node 24's built-in `node:sqlite` (`DatabaseSync`): synchronous prepared statements, no native addon, nothing extra in the Docker image. Every statement is prepared once in the constructor. Transactions are explicit `BEGIN` / `COMMIT` / `ROLLBACK` behind one private helper, since the driver has no `transaction()`.
 
 ## Open sequence
 

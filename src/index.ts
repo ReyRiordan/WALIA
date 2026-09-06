@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import { createClassifier } from "./classifier/index.ts";
 import { type Config, ConfigError, type Env, loadConfig, parseEnv } from "./config.ts";
-import { Loop, openStore } from "./core/index.ts";
+import { Loop, openStore, renameLegacyStore } from "./core/index.ts";
 import { log } from "./log.ts";
 import { Alerter, createNotifier } from "./notifier/index.ts";
 import { startHealthServer } from "./ops/health.ts";
@@ -44,7 +44,8 @@ log.info(
   "config loaded",
 );
 
-const store = openStore(join(env.DATA_DIR, "walia.db"));
+renameLegacyStore(env.DATA_DIR);
+const store = openStore(join(env.DATA_DIR, "malja.db"));
 const client = new LinkedInClient({ proxyUrl: env.PROXY_URL });
 const classifier = createClassifier(config, env);
 const notifier = createNotifier(config, env);

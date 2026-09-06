@@ -27,6 +27,6 @@ const notifier = createNotifier(config, env);
 await notifier.start();
 const { messageId } = await notifier.send(sample);
 log.info({ messageId, chatId: env.TELEGRAM_GROUP_CHAT_ID }, "group message sent");
-await notifier.sendAdmin("WALIA notify:test: admin alerts work");
+await notifier.sendAdmin("MALJA notify:test: admin alerts work");
 log.info({ chatId: env.TELEGRAM_ADMIN_CHAT_ID }, "admin message sent");
 await notifier.stop();

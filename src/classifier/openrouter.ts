@@ -123,7 +123,7 @@ export class OpenRouterClassifier implements Classifier {
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
           "Content-Type": "application/json",
-          "X-Title": "WALIA",
+          "X-Title": "MALJA",
         },
         body: JSON.stringify({
           model: this.model,

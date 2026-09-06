@@ -20,7 +20,7 @@ createClassifier(config: Config, env: Env, opts?: Partial<OpenRouterClassifierOp
 
 ## Transport
 
-Plain `fetch`, no SDK. One POST per `classify`. Headers: `Authorization: Bearer`, `Content-Type: application/json`, `X-Title: WALIA`. Body: `model`, `messages` from `buildMessages`, `temperature: 0`, `max_tokens`, `response_format` with the strict schema, and `reasoning: { effort }` when `classifier.reasoningEffort` is set.
+Plain `fetch`, no SDK. One POST per `classify`. Headers: `Authorization: Bearer`, `Content-Type: application/json`, `X-Title: MALJA`. Body: `model`, `messages` from `buildMessages`, `temperature: 0`, `max_tokens`, `response_format` with the strict schema, and `reasoning: { effort }` when `classifier.reasoningEffort` is set.
 
 `fetch`, `sleep`, `now`, and the logger are injected, the same construction as `LinkedInClient`, so tests script replies and never touch the network.
 

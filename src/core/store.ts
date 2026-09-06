@@ -1,7 +1,8 @@
-import { mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import { existsSync, mkdirSync, renameSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { DatabaseSync, type StatementSync } from "node:sqlite";
 import type { DegreeOk, Relevant, Verdict, WorkAuth } from "../classifier/types.ts";
+import { log } from "../log.ts";
 import type { Job } from "../scraper/types.ts";
 import { dedupeKey, type Group } from "./dedupe.ts";
 
@@ -78,6 +79,24 @@ interface NotificationRow {
   dedupe_key: string;
   linkedin_ids: string;
   created_at: number;
+}
+
+const SQLITE_SIDECARS = ["", "-wal", "-shm"];
+
+/**
+ * One-time rename of the pre-MALJA `walia.db` (and its WAL sidecars) to `malja.db`.
+ * No-op once `malja.db` exists. Delete after every deployment has booted on it.
+ */
+export function renameLegacyStore(dir: string): void {
+  if (existsSync(join(dir, "malja.db"))) return;
+  const renamed: string[] = [];
+  for (const suffix of SQLITE_SIDECARS) {
+    const from = join(dir, `walia.db${suffix}`);
+    if (!existsSync(from)) continue;
+    renameSync(from, join(dir, `malja.db${suffix}`));
+    renamed.push(`walia.db${suffix}`);
+  }
+  if (renamed.length > 0) log.info({ dir, renamed }, "renamed legacy store files to malja.db");
 }
 
 export function openStore(path: string): Store {

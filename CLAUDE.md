@@ -1,6 +1,6 @@
-# WALIA
+# MALJA
 
-WALIA polls LinkedIn's public (logged-out) job search for new internship postings that match saved searches, runs each posting through an LLM eligibility check, dedupes it against a persistent store, and posts each new match to a Telegram group of master's students. The name predates the switch from WhatsApp to Telegram; delivery sits behind a notifier interface so a WhatsApp adapter can be added later.
+MALJA (Messaging App LinkedIn Job Alerts) polls LinkedIn's public (logged-out) job search for new internship postings that match saved searches, runs each posting through an LLM eligibility check, dedupes it against a persistent store, and posts each new match to a Telegram group of master's students. Delivery sits behind a notifier interface; Telegram is the first adapter, and a WhatsApp or other messaging adapter can be added later.
 
 ## Codebase
 
@@ -30,7 +30,7 @@ pnpm 10 (`npm i -g pnpm`, then `pnpm install`).
 - `pnpm eval:classifier` runs the labelled files in test/eval/eligibility/ through the classifier against real OpenRouter and exits 1 on any false `no` or call error. Costs money; not in CI. See docs/classifier/eval.md.
 - `pnpm test` runs vitest once. `pnpm lint` runs Biome check. `pnpm format` writes Biome formatting. `pnpm typecheck` runs tsc over src and test.
 - `pnpm build` emits dist/ from tsconfig.build.json (tests excluded). `pnpm start` runs dist/index.js.
-- `docker build -t walia .` then `docker run --env-file .env walia` mirrors the Railway deploy. `railway.json` holds the builder, healthcheck, and restart policy; the rest is dashboard config listed in docs/operations/deploy.md.
+- `docker build -t malja .` then `docker run --env-file .env malja` mirrors the Railway deploy. `railway.json` holds the builder, healthcheck, and restart policy; the rest is dashboard config listed in docs/operations/deploy.md.
 
 CI (`.github/workflows/ci.yml`) runs lint, typecheck, test, and a Docker build on every push and pull request. No git hooks.
 

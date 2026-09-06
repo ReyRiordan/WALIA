@@ -87,7 +87,7 @@ describe("OpenRouterClassifier happy path", () => {
     expect(init.headers).toMatchObject({
       Authorization: "Bearer sk-test",
       "Content-Type": "application/json",
-      "X-Title": "WALIA",
+      "X-Title": "MALJA",
     });
     expect(init.signal).toBeInstanceOf(AbortSignal);
     const body = JSON.parse(init.body as string);
