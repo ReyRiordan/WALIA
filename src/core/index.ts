@@ -13,7 +13,6 @@ export {
   MIGRATIONS,
   openStore,
   type PendingNotification,
-  renameLegacyStore,
   Store,
   type StoredJob,
 } from "./store.ts";

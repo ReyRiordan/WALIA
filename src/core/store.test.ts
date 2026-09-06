@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Job } from "../scraper/types.ts";
 import type { Group } from "./dedupe.ts";
 import { dedupeKey, groupByKey } from "./dedupe.ts";
-import { MIGRATIONS, openStore, renameLegacyStore, type Store } from "./store.ts";
+import { MIGRATIONS, openStore, type Store } from "./store.ts";
 
 const NOW = Date.UTC(2026, 8, 5, 12, 0, 0);
 const DAY = 86_400_000;
@@ -24,46 +24,6 @@ function job(id: string, over: Partial<Job> = {}): Job {
     ...over,
   };
 }
-
-describe("renameLegacyStore", () => {
-  let dir: string;
-  beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), "malja-legacy-"));
-  });
-  afterEach(() => {
-    rmSync(dir, { recursive: true, force: true });
-  });
-
-  it("renames walia.db and its sidecars when malja.db is absent", () => {
-    for (const suffix of ["", "-wal", "-shm"])
-      writeFileSync(join(dir, `walia.db${suffix}`), suffix);
-    renameLegacyStore(dir);
-    for (const suffix of ["", "-wal", "-shm"]) {
-      expect(existsSync(join(dir, `walia.db${suffix}`))).toBe(false);
-      expect(readFileSync(join(dir, `malja.db${suffix}`), "utf8")).toBe(suffix);
-    }
-  });
-
-  it("skips missing sidecars", () => {
-    writeFileSync(join(dir, "walia.db"), "");
-    renameLegacyStore(dir);
-    expect(existsSync(join(dir, "malja.db"))).toBe(true);
-    expect(existsSync(join(dir, "malja.db-wal"))).toBe(false);
-  });
-
-  it("leaves everything alone once malja.db exists", () => {
-    writeFileSync(join(dir, "malja.db"), "new");
-    writeFileSync(join(dir, "walia.db"), "old");
-    renameLegacyStore(dir);
-    expect(readFileSync(join(dir, "malja.db"), "utf8")).toBe("new");
-    expect(existsSync(join(dir, "walia.db"))).toBe(true);
-  });
-
-  it("does nothing in an empty directory", () => {
-    renameLegacyStore(dir);
-    expect(existsSync(join(dir, "malja.db"))).toBe(false);
-  });
-});
 
 describe("openStore on disk", () => {
   let dir: string;
