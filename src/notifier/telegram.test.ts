@@ -55,7 +55,7 @@ describe("TelegramNotifier", () => {
   });
 
   it("start() calls getMe once and becomes ready", async () => {
-    const { notifier, calls } = harness([ok({ id: 1, username: "walia_bot" })]);
+    const { notifier, calls } = harness([ok({ id: 1, username: "malja_bot" })]);
     await notifier.start();
     expect(calls.map((c) => c.method)).toEqual(["getMe"]);
     expect(notifier.isReady()).toBe(true);
@@ -92,9 +92,9 @@ describe("TelegramNotifier", () => {
 
   it("a 403 kicked flips isReady false, throws, and a probe brings it back", async () => {
     const { notifier, calls } = harness([
-      ok({ id: 1, username: "walia_bot" }),
+      ok({ id: 1, username: "malja_bot" }),
       fail(403, "Forbidden: bot was kicked from the group chat"),
-      ok({ id: 1, username: "walia_bot" }),
+      ok({ id: 1, username: "malja_bot" }),
       ok({ id: -100123, type: "supergroup" }),
     ]);
     await notifier.start();

@@ -21,7 +21,7 @@ Implement GitHub issue $ARGUMENTS and open a PR.
 # Verify
 Before every commit, run what CI runs:
 `pnpm lint && pnpm typecheck && pnpm test`. Fix failures, don't skip them.
-If the Dockerfile or dependencies changed, also `docker build -t walia .`.
+If the Dockerfile or dependencies changed, also `docker build -t malja .`.
 
 # Document
 Update docs/ per the rule in CLAUDE.md. Check CLAUDE.md's Commands and Glossary too.
